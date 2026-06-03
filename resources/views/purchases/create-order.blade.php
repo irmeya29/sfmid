@@ -1,0 +1,10 @@
+@extends('layouts.app')
+@section('title','BC fournisseur | SFMID')
+@section('subtitle','Achats')
+@section('page-title','Nouveau bon de commande fournisseur')
+@section('content')
+<form method="POST" action="{{ route('purchases.orders.store') }}" class="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">@csrf
+<div class="grid gap-4 lg:grid-cols-4"><select name="supplier_id" class="rounded-xl border border-slate-300 px-4 py-3 text-sm" required><option value="">Fournisseur</option>@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}" @selected(request('supplier_id')==$supplier->id)>{{ $supplier->code }} - {{ $supplier->name }}</option>@endforeach</select><input type="date" name="order_date" value="{{ now()->toDateString() }}" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"><input type="date" name="expected_delivery_date" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"><input name="terms" placeholder="Conditions" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"></div>
+<div class="space-y-3">@for($i=0;$i<5;$i++)<div class="grid gap-3 lg:grid-cols-[2fr_1fr_1fr]"><select name="items[{{ $i }}][product_id]" class="rounded-xl border border-slate-300 px-4 py-3 text-sm" @if($i===0) required @endif><option value="">Produit</option>@foreach($products as $product)<option value="{{ $product->id }}">{{ $product->code }} - {{ $product->name }}</option>@endforeach</select><input type="number" step="any" name="items[{{ $i }}][quantity]" value="{{ $i===0 ? 1 : '' }}" placeholder="Quantité" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"><input type="number" step="0.01" name="items[{{ $i }}][unit_price]" value="{{ $i===0 ? 0 : '' }}" placeholder="Prix achat" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"></div>@endfor</div>
+<textarea name="notes" rows="3" placeholder="Notes" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm"></textarea><div class="flex justify-end"><x-button type="submit" icon="save">Creer le BC</x-button></div></form>
+@endsection

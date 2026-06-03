@@ -1,0 +1,8 @@
+@extends('layouts.app')
+@section('title','Facture fournisseur | SFMID')
+@section('subtitle','Achats')
+@section('page-title','Enregistrer facture fournisseur')
+@section('content')
+<form method="POST" action="{{ route('purchases.invoices.store') }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">@csrf
+<div class="grid gap-4 lg:grid-cols-3"><select name="supplier_purchase_order_id" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"><option value="">BC fournisseur</option>@foreach($orders as $order)<option value="{{ $order->id }}" @selected($selectedOrderId===$order->id)>{{ $order->number }} - {{ $order->supplier?->name }}</option>@endforeach</select><select name="supplier_id" class="rounded-xl border border-slate-300 px-4 py-3 text-sm" required><option value="">Fournisseur</option>@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}">{{ $supplier->name }}</option>@endforeach</select><input name="supplier_invoice_number" placeholder="N facture fournisseur" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"><input type="date" name="invoice_date" value="{{ now()->toDateString() }}" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"><input type="date" name="due_date" class="rounded-xl border border-slate-300 px-4 py-3 text-sm"><input type="number" step="0.01" name="total" placeholder="Montant facture" class="rounded-xl border border-slate-300 px-4 py-3 text-sm" required></div><textarea name="notes" rows="3" placeholder="Notes" class="mt-4 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm"></textarea><div class="mt-4 flex justify-end"><x-button type="submit" icon="save">Enregistrer</x-button></div></form>
+@endsection

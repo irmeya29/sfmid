@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class UpdateDeliveryNoteRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'client_delivery_site_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('client_delivery_sites', 'id')
+                    ->where('client_id', $this->integer('client_id')),
+            ],
+            'planned_delivery_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.delivered_quantity' => ['nullable', 'numeric', 'min:0.001', 'lte:items.*.quantity'],
+            'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+}
