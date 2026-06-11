@@ -26,7 +26,14 @@ class ProformaPolicy
     public function update(User $user, Proforma $proforma): bool
     {
         return $user->hasPermission('proformas.update')
-            && $proforma->status->isEditable();
+            && (
+                $proforma->status->isEditable()
+                || (
+                    $user->hasPermission('sensitive.update_validated_document')
+                    && $proforma->status !== DocumentStatus::Converted
+                    && $proforma->status !== DocumentStatus::Cancelled
+                )
+            );
     }
 
     public function delete(User $user, Proforma $proforma): bool

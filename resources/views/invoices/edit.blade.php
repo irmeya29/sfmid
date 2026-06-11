@@ -24,6 +24,30 @@
                     @error('due_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
             </div>
+            <div class="grid gap-5 sm:grid-cols-3">
+                <div class="sm:col-span-3">
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Objet <span class="text-red-600">*</span></label>
+                    <input name="subject" value="{{ old('subject', $invoice->subject) }}" required maxlength="255" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                    @error('subject')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Incoterm / condition de vente</label>
+                    <select name="incoterm" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                        <option value="">Non precise</option>
+                        @foreach(['EXW', 'DAP', 'DDP', 'Autres'] as $incoterm)
+                            <option value="{{ $incoterm }}" @selected(old('incoterm', $invoice->incoterm) === $incoterm)>{{ $incoterm }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Devise</label>
+                    <input name="currency" value="{{ old('currency', $invoice->currency ?: 'FCFA') }}" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Delai de livraison</label>
+                    <input name="delivery_delay" value="{{ old('delivery_delay', $invoice->delivery_delay) }}" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                </div>
+            </div>
             <div>
                 <label class="mb-2 block text-sm font-semibold text-slate-700">Conditions de paiement</label>
                 <textarea name="payment_terms" rows="3" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">{{ old('payment_terms', $invoice->payment_terms) }}</textarea>

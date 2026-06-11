@@ -29,6 +29,13 @@
         </div>
     @endif
 
+    @include('commercial-documents._status-admin', [
+        'action' => route('invoices.status.update', $invoice),
+        'currentStatus' => $invoice->status,
+        'statuses' => \App\Enums\InvoiceStatus::cases(),
+        'title' => 'Administration du statut facture',
+    ])
+
     <div class="grid gap-5 lg:grid-cols-3">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
             <h3 class="text-base font-bold text-slate-950">Client</h3>
@@ -53,13 +60,21 @@
             </div>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 class="text-base font-bold text-slate-950">Résumé</h3>
+            <h3 class="text-base font-bold text-slate-950">Conditions</h3>
             <div class="mt-5 space-y-4">
-                <div class="flex justify-between"><span class="text-sm text-slate-500">Total</span><span class="font-bold">{{ number_format((float) $invoice->total, 0, ',', ' ') }} FCFA</span></div>
-                <div class="flex justify-between"><span class="text-sm text-slate-500">Payé</span><span class="font-bold">{{ number_format((float) $invoice->paid_amount, 0, ',', ' ') }} FCFA</span></div>
-                <div class="border-t pt-4 flex justify-between"><span class="font-bold">Reste à payer</span><span class="text-xl font-black">{{ number_format((float) $invoice->balance_due, 0, ',', ' ') }} FCFA</span></div>
+                <div class="border-b pb-4"><p class="text-sm text-slate-500">Objet</p><p class="mt-1 font-semibold">{{ $invoice->subject ?: '-' }}</p></div>
+                <div class="flex justify-between"><span class="text-sm text-slate-500">Incoterm</span><span class="font-bold">{{ $invoice->incoterm ?: '-' }}</span></div>
+                <div class="flex justify-between"><span class="text-sm text-slate-500">Devise</span><span class="font-bold">{{ $invoice->currency ?: 'FCFA' }}</span></div>
+                <div class="flex justify-between"><span class="text-sm text-slate-500">Delai livraison</span><span class="font-bold">{{ $invoice->delivery_delay ?: '-' }}</span></div>
+                <div class="border-t pt-4"><p class="text-sm text-slate-500">Reglement</p><p class="mt-1 font-semibold">{{ $invoice->payment_terms ?: '-' }}</p></div>
             </div>
         </div>
+    </div>
+
+    <div class="mt-6 grid gap-5 sm:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Total</p><p class="mt-2 text-xl font-bold">{{ number_format((float) $invoice->total, 0, ',', ' ') }} {{ $invoice->currency ?: 'FCFA' }}</p></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Payé</p><p class="mt-2 text-xl font-bold">{{ number_format((float) $invoice->paid_amount, 0, ',', ' ') }} {{ $invoice->currency ?: 'FCFA' }}</p></div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Reste à payer</p><p class="mt-2 text-xl font-black">{{ number_format((float) $invoice->balance_due, 0, ',', ' ') }} {{ $invoice->currency ?: 'FCFA' }}</p></div>
     </div>
 
     <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

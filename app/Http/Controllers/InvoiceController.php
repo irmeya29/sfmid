@@ -12,7 +12,6 @@ use App\Models\Client;
 use App\Models\CompanySetting;
 use App\Models\DeliveryNote;
 use App\Models\Invoice;
-use App\Models\Product;
 use App\Models\Proforma;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -76,13 +75,14 @@ class InvoiceController extends Controller
             'selectedDeliveryNoteId' => $request->integer('delivery_note_id') ?: null,
             'selectedProformaId' => $request->integer('proforma_id') ?: null,
             'clients' => Client::query()->active()->orderBy('name')->get(),
-            'products' => Product::query()->active()->commercial()->orderBy('name')->get(),
+            'company' => CompanySetting::query()->pluck('value', 'key')->all(),
             'lineItems' => [
                 [
                     'product_id' => '',
                     'quantity' => 1,
                     'unit_price' => 0,
                     'discount_amount' => 0,
+                    'tax_rate' => 0,
                 ],
             ],
         ]);

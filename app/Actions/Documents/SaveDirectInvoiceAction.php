@@ -28,7 +28,7 @@ class SaveDirectInvoiceAction
     public function execute(array $data, User $user): Invoice
     {
         return DB::transaction(function () use ($data, $user): Invoice {
-            $totals = $this->buildItemsAndTotals($data['items'], (int) $data['client_id']);
+            $totals = $this->buildItemsAndTotals($data['items'], (int) $data['client_id'], $this->globalTaxRate($data));
             $status = $user->bypassesDocumentValidation()
                 ? InvoiceStatus::Validated
                 : InvoiceStatus::Draft;
@@ -43,13 +43,17 @@ class SaveDirectInvoiceAction
                 'validated_at' => $status === InvoiceStatus::Validated ? now() : null,
                 'issue_date' => $data['issue_date'],
                 'due_date' => $data['due_date'] ?? null,
+                'subject' => $data['subject'],
+                'incoterm' => $data['incoterm'] ?? null,
+                'currency' => $data['currency'] ?? 'FCFA',
                 'subtotal' => $totals['subtotal'],
                 'discount_total' => $totals['discount_total'],
-                'tax_total' => 0,
+                'tax_total' => $totals['tax_total'],
                 'total' => $totals['total'],
                 'paid_amount' => 0,
                 'balance_due' => $totals['total'],
                 'payment_terms' => $data['payment_terms'] ?? null,
+                'delivery_delay' => $data['delivery_delay'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $user->id,
             ]);
@@ -92,13 +96,14 @@ class SaveDirectInvoiceAction
 
     /**
      * @param  array<int, array<string, mixed>>  $items
-     * @return array{subtotal: float, discount_total: float, total: float, items: array<int, array<string, mixed>>}
+     * @return array{subtotal: float, discount_total: float, tax_total: float, total: float, items: array<int, array<string, mixed>>}
      */
-    private function buildItemsAndTotals(array $items, int $clientId): array
+    private function buildItemsAndTotals(array $items, int $clientId, float $taxRate): array
     {
         $preparedItems = [];
         $subtotal = 0;
         $discountTotal = 0;
+        $taxTotal = 0;
 
         foreach ($items as $item) {
             $product = Product::query()->whereKey($item['product_id'])->firstOrFail();
@@ -111,7 +116,6 @@ class SaveDirectInvoiceAction
                 ? (float) $item['unit_price']
                 : (float) $product->sale_price;
             $discountAmount = isset($item['discount_amount']) ? (float) $item['discount_amount'] : 0;
-
             if ($quantity <= 0) {
                 throw new RuntimeException("Quantité invalide pour {$product->name}.");
             }
@@ -120,11 +124,18 @@ class SaveDirectInvoiceAction
                 throw new RuntimeException("Remise invalide pour {$product->name}.");
             }
 
+            if ($taxRate < 0 || $taxRate > 100) {
+                throw new RuntimeException("TVA invalide pour {$product->name}.");
+            }
+
             $lineSubtotal = $quantity * $unitPrice;
-            $lineTotal = round($lineSubtotal - $discountAmount, 2);
+            $lineTotalHt = round($lineSubtotal - $discountAmount, 2);
+            $taxAmount = round($lineTotalHt * ($taxRate / 100), 2);
+            $lineTotalTtc = round($lineTotalHt + $taxAmount, 2);
 
             $subtotal += $lineSubtotal;
             $discountTotal += $discountAmount;
+            $taxTotal += $taxAmount;
 
             $preparedItems[] = [
                 'delivery_note_item_id' => null,
@@ -136,16 +147,32 @@ class SaveDirectInvoiceAction
                 'unit' => $product->unit,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
+                'line_subtotal' => $lineSubtotal,
                 'discount_amount' => $discountAmount,
-                'line_total' => $lineTotal,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmount,
+                'line_total_ht' => $lineTotalHt,
+                'line_total_ttc' => $lineTotalTtc,
+                'line_total' => $lineTotalTtc,
             ];
         }
 
         return [
             'subtotal' => round($subtotal, 2),
             'discount_total' => round($discountTotal, 2),
-            'total' => round($subtotal - $discountTotal, 2),
+            'tax_total' => round($taxTotal, 2),
+            'total' => round($subtotal - $discountTotal + $taxTotal, 2),
             'items' => $preparedItems,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function globalTaxRate(array $data): float
+    {
+        return (bool) ($data['apply_tax'] ?? false)
+            ? (float) ($data['tax_rate'] ?? 0)
+            : 0.0;
     }
 }

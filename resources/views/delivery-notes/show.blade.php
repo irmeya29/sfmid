@@ -60,12 +60,20 @@
         <x-alert type="error" :message="'Motif de rejet : '.$deliveryNote->rejection_reason" />
     @endif
 
+    @include('commercial-documents._status-admin', [
+        'action' => route('delivery-notes.status.update', $deliveryNote),
+        'currentStatus' => $deliveryNote->status,
+        'statuses' => \App\Enums\DeliveryNoteStatus::cases(),
+        'title' => 'Administration du statut BL',
+    ])
+
     <div class="grid gap-5 lg:grid-cols-3">
         <x-card title="Client et livraison" class="lg:col-span-2">
             <div class="grid gap-4 sm:grid-cols-2">
                 <div><p class="text-xs font-semibold uppercase text-slate-500">Client</p><p class="mt-1 font-semibold text-slate-950">{{ $deliveryNote->client?->name }}</p></div>
                 <div><p class="text-xs font-semibold uppercase text-slate-500">Code client</p><p class="mt-1 font-semibold text-slate-950">{{ $deliveryNote->client?->code }}</p></div>
                 <div><p class="text-xs font-semibold uppercase text-slate-500">Téléphone</p><p class="mt-1 font-semibold text-slate-950">{{ $deliveryNote->client?->phone ?: 'Non renseigné' }}</p></div>
+                <div class="sm:col-span-2"><p class="text-xs font-semibold uppercase text-slate-500">Objet</p><p class="mt-1 font-semibold text-slate-950">{{ $deliveryNote->subject ?: $deliveryNote->proforma?->subject ?: 'Non renseigne' }}</p></div>
                 <div>
                     <p class="text-xs font-semibold uppercase text-slate-500">Source</p>
                     <p class="mt-1 font-semibold text-slate-950">

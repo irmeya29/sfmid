@@ -48,6 +48,7 @@ class ConvertCustomerOrderToDeliveryNoteAction
                 'validated_by' => $status === DeliveryNoteStatus::Validated ? $user->id : null,
                 'validated_at' => $status === DeliveryNoteStatus::Validated ? now() : null,
                 'planned_delivery_date' => now()->addDay()->toDateString(),
+                'subject' => "Livraison du bon de commande {$customerOrder->number}",
                 'subtotal' => $customerOrder->subtotal,
                 'discount_total' => $customerOrder->discount_total,
                 'tax_total' => $customerOrder->tax_total,

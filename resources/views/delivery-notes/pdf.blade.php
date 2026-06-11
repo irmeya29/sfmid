@@ -13,7 +13,6 @@
         'documentTitle' => 'Bordereau de livraison',
         'documentNumber' => $deliveryNote->number,
         'documentDate' => $deliveryNote->planned_delivery_date?->format('d/m/Y'),
-        'documentStatus' => $deliveryNote->status->label(),
         'hideDocumentHeading' => true,
     ])
     @include('pdf._footer')
@@ -28,7 +27,6 @@
                 <td class="erp-title-meta">
                     <div class="meta-line">Date prevue : <strong>{{ $deliveryNote->planned_delivery_date?->format('d/m/Y') ?: '-' }}</strong></div>
                     @if($deliveryNote->delivered_at)<div class="meta-line">Livre le : <strong>{{ $deliveryNote->delivered_at->format('d/m/Y H:i') }}</strong></div>@endif
-                    <span class="erp-status">{{ $deliveryNote->status->label() }}</span>
                 </td>
             </tr>
         </table>
@@ -39,26 +37,28 @@
                     <div class="erp-card">
                         <div class="erp-card-title">Client livre</div>
                         <div class="erp-card-name">{{ $deliveryNote->client?->name ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Code client</span> {{ $deliveryNote->client?->code ?: '-' }}</div>
-                        @if($deliveryNote->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span> {{ $deliveryNote->client->phone }}</div>@endif
-                        @if($deliveryNote->client?->email)<div class="erp-row"><span class="erp-label">Email</span> {{ $deliveryNote->client->email }}</div>@endif
-                        @if($deliveryNote->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span> {{ $deliveryNote->client->ifu }}</div>@endif
+                        <div class="erp-row"><span class="erp-label">Code client</span><span class="erp-value">{{ $deliveryNote->client?->code ?: '-' }}</span></div>
+                        @if($deliveryNote->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $deliveryNote->client->phone }}</span></div>@endif
+                        @if($deliveryNote->client?->email)<div class="erp-row"><span class="erp-label">Email</span><span class="erp-value">{{ $deliveryNote->client->email }}</span></div>@endif
+                        @if($deliveryNote->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span><span class="erp-value">{{ $deliveryNote->client->ifu }}</span></div>@endif
                     </div>
                 </td>
                 <td class="erp-info-gap"></td>
                 <td style="width: 42%;">
                     <div class="erp-card">
                         <div class="erp-card-title">Livraison / reception</div>
-                        @if($deliveryNote->customerOrder)<div class="erp-row"><span class="erp-label">BC client</span> {{ $deliveryNote->customerOrder->customer_reference ?: $deliveryNote->customerOrder->number }}</div>@endif
-                        @if($deliveryNote->proforma)<div class="erp-row"><span class="erp-label">Proforma</span> {{ $deliveryNote->proforma->number }}</div>@endif
-                        @if($deliveryNote->deliverySite)<div class="erp-row"><span class="erp-label">Site</span> {{ $deliveryNote->deliverySite->name }}</div>@endif
-                        @if($deliveryNote->delivery_address)<div class="erp-row"><span class="erp-label">Adresse</span> {{ $deliveryNote->delivery_address }}</div>@endif
-                        @if($deliveryNote->receiver_name)<div class="erp-row"><span class="erp-label">Recu par</span> {{ $deliveryNote->receiver_name }}</div>@endif
-                        @if($deliveryNote->receiver_phone)<div class="erp-row"><span class="erp-label">Telephone</span> {{ $deliveryNote->receiver_phone }}</div>@endif
+                        @if($deliveryNote->customerOrder)<div class="erp-row"><span class="erp-label">BC client</span><span class="erp-value">{{ $deliveryNote->customerOrder->customer_reference ?: $deliveryNote->customerOrder->number }}</span></div>@endif
+                        @if($deliveryNote->proforma)<div class="erp-row"><span class="erp-label">Proforma</span><span class="erp-value">{{ $deliveryNote->proforma->number }}</span></div>@endif
+                        @if($deliveryNote->deliverySite)<div class="erp-row"><span class="erp-label">Site</span><span class="erp-value">{{ $deliveryNote->deliverySite->name }}</span></div>@endif
+                        @if($deliveryNote->delivery_address)<div class="erp-row"><span class="erp-label">Adresse</span><span class="erp-value">{{ $deliveryNote->delivery_address }}</span></div>@endif
+                        @if($deliveryNote->receiver_name)<div class="erp-row"><span class="erp-label">Recu par</span><span class="erp-value">{{ $deliveryNote->receiver_name }}</span></div>@endif
+                        @if($deliveryNote->receiver_phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $deliveryNote->receiver_phone }}</span></div>@endif
                     </div>
                 </td>
             </tr>
         </table>
+
+        <div class="erp-subject"><strong>Objet :</strong><span class="erp-subject-text">{{ $deliveryNote->subject ?: $deliveryNote->proforma?->subject ?: '-' }}</span></div>
 
         <table class="erp-lines">
             <thead>
@@ -74,8 +74,8 @@
             <tbody>
                 @foreach($deliveryNote->items as $item)
                     <tr>
-                        <td class="ref">{{ $item->client_product_reference ?: ($item->product_internal_reference ?: $item->product_code) }}</td>
-                        <td class="name">{{ $item->product_name }}<br><span class="muted-cell">Ref SFMID : {{ $item->product_internal_reference ?: $item->product_code }}</span></td>
+                        <td class="ref">{{ $item->client_product_reference ?: $item->product_code }}</td>
+                        <td class="name">{{ $item->product_name }}</td>
                         <td class="right">{{ $qty($item->quantity) }}</td>
                         <td class="right">{{ $qty($item->delivered_quantity) }}</td>
                         <td>{{ $item->unit }}</td>

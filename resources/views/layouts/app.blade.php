@@ -218,9 +218,9 @@
                             @php
                                 $isActive = request()->routeIs(...$item['active']);
                             @endphp
-                            <a href="{{ route($item['route']) }}" class="group flex items-center gap-3 rounded-2xl px-3 py-3 font-black transition {{ $isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">
-                                <span class="flex h-9 w-9 items-center justify-center rounded-xl {{ $isActive ? 'bg-white/12 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-slate-900' }}">
-                                    <i data-lucide="{{ $item['icon'] }}" class="h-4 w-4"></i>
+                            <a href="{{ route($item['route']) }}" class="group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-bold transition {{ $isActive ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-md {{ $isActive ? 'bg-white/12 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-slate-900' }}">
+                                    <i data-lucide="{{ $item['icon'] }}" class="h-3.5 w-3.5"></i>
                                 </span>
                                 <span class="flex-1">{{ $item['label'] }}</span>
                                 @if($item['count'])
@@ -233,7 +233,7 @@
 
                 <div class="my-5 border-t border-slate-200"></div>
 
-                <div class="space-y-2">
+                <div class="space-y-3">
                     @foreach($navGroups as $group)
                         @php
                             $visibleItems = collect($group['items'])->filter(fn ($item) => $item['show']);
@@ -241,31 +241,28 @@
                         @endphp
 
                         @if($visibleItems->isNotEmpty())
-                            <details class="group rounded-2xl" {{ $isGroupActive ? 'open' : '' }}>
-                                <summary class="flex cursor-pointer list-none items-center gap-3 rounded-2xl px-3 py-3 transition {{ $isGroupActive ? 'bg-white text-slate-950 shadow-sm ring-1 ring-slate-200' : 'text-slate-700 hover:bg-slate-100' }}">
-                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl {{ $isGroupActive ? 'bg-cyan-50 text-cyan-800' : 'bg-slate-100 text-slate-500' }}">
+                            <section class="rounded-xl border {{ $isGroupActive ? 'border-cyan-200 bg-cyan-50/50' : 'border-slate-200 bg-white' }} px-2 py-2">
+                                <div class="mb-1 flex items-center gap-2 px-1.5 py-1">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-lg {{ $isGroupActive ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-500' }}">
                                         <i data-lucide="{{ $group['icon'] }}" class="h-4 w-4"></i>
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block font-black">{{ $group['label'] }}</span>
-                                        <span class="block truncate text-xs font-medium text-slate-400">{{ $group['caption'] }}</span>
+                                        <span class="block text-xs font-black uppercase text-slate-950">{{ $group['label'] }}</span>
                                     </span>
-                                    <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 transition group-open:rotate-180"></i>
-                                </summary>
+                                </div>
 
-                                <div class="submenu mt-1 space-y-1 pl-4">
+                                <div class="space-y-0.5">
                                     @foreach($visibleItems as $item)
                                         @php
                                             $isActive = request()->routeIs(...$item['active']);
                                         @endphp
-                                        <a href="{{ route($item['route']) }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 font-bold transition {{ $isActive ? 'bg-cyan-50 text-cyan-800' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950' }}">
-                                            <i data-lucide="{{ $item['icon'] }}" class="h-4 w-4"></i>
-                                            <span class="flex-1">{{ $item['label'] }}</span>
-                                            @if($isActive)<span class="h-1.5 w-1.5 rounded-full bg-cyan-700"></span>@endif
+                                        <a href="{{ route($item['route']) }}" class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-bold transition {{ $isActive ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950' }}">
+                                            <i data-lucide="{{ $item['icon'] }}" class="h-4 w-4 shrink-0"></i>
+                                            <span class="min-w-0 flex-1 truncate">{{ $item['label'] }}</span>
                                         </a>
                                     @endforeach
                                 </div>
-                            </details>
+                            </section>
                         @endif
                     @endforeach
                 </div>
@@ -286,7 +283,7 @@
         </div>
     </aside>
 
-    <div class="flex min-h-screen flex-1 flex-col">
+    <div class="flex min-h-screen min-w-0 flex-1 flex-col">
         <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
             <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-6">
                 <div class="flex min-w-0 items-center gap-3">
@@ -342,7 +339,7 @@
             </div>
         </header>
 
-        <main class="flex-1 px-4 py-6 sm:px-6 xl:px-8">
+        <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 xl:px-8">
             <x-alert type="success" :message="session('success')" />
             <x-alert type="error" :message="session('error')" />
 
@@ -371,6 +368,19 @@
     openButton?.addEventListener('click', openSidebar);
     closeButton?.addEventListener('click', closeSidebar);
     overlay?.addEventListener('click', closeSidebar);
+
+    document.querySelectorAll('[data-password-toggle]').forEach(button => {
+        button.addEventListener('click', () => {
+            const input = document.getElementById(button.dataset.passwordToggle);
+            if (!input) return;
+
+            const visible = input.type === 'text';
+            input.type = visible ? 'password' : 'text';
+            button.setAttribute('aria-label', visible ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+            button.innerHTML = `<i data-lucide="${visible ? 'eye' : 'eye-off'}" class="h-4 w-4"></i>`;
+            lucide.createIcons();
+        });
+    });
 </script>
 </body>
 </html>

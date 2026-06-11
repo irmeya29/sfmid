@@ -43,7 +43,6 @@
         <div class="document-meta-strip">
             <span><strong>N°</strong> {{ $documentNumber ?? now()->format('YmdHis') }}</span>
             @isset($documentDate)<span><strong>Date</strong> {{ $documentDate }}</span>@endisset
-            @isset($documentStatus)<span class="pill">{{ $documentStatus }}</span>@endisset
         </div>
     </div>
 @endunless

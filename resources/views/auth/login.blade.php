@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion | SFMID Gestion</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
@@ -85,7 +86,7 @@
 
                     <div>
                         <div class="text-2xl font-black leading-none tracking-tight text-white">SFMID</div>
-                        <div class="mt-1.5 text-[11px] font-semibold uppercase tracking-[2px] text-white/50">Gestion</div>
+                        <div class="mt-1.5 text-[11px] font-semibold uppercase tracking-[2px] text-white/50">Application de gestion</div>
                     </div>
                 </div>
                 <div class="mt-5 h-[3px] w-9 rounded-full bg-[#FA820A]"></div>
@@ -148,7 +149,10 @@
                             <input id="password" name="password" type="password"
                                    autocomplete="current-password"
                                    placeholder="••••••••"
-                                   class="form-input w-full rounded-xl border-[1.5px] border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm text-slate-900">
+                                   class="form-input w-full rounded-xl border-[1.5px] border-slate-200 bg-slate-50 py-3.5 pl-11 pr-12 text-sm text-slate-900">
+                            <button type="button" data-password-toggle="password" class="absolute inset-y-0 right-3 flex items-center rounded-lg px-2 text-slate-400 hover:text-[#2676B3]" aria-label="Afficher le mot de passe">
+                                <i data-lucide="eye" class="h-4 w-4"></i>
+                            </button>
                         </div>
                         @error('password')
                             <p class="mt-2 text-xs font-semibold text-red-600">{{ $message }}</p>
@@ -186,5 +190,21 @@
 
     </main>
 
+<script>
+    lucide.createIcons();
+
+    document.querySelectorAll('[data-password-toggle]').forEach(button => {
+        button.addEventListener('click', () => {
+            const input = document.getElementById(button.dataset.passwordToggle);
+            if (!input) return;
+
+            const visible = input.type === 'text';
+            input.type = visible ? 'password' : 'text';
+            button.setAttribute('aria-label', visible ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+            button.innerHTML = `<i data-lucide="${visible ? 'eye' : 'eye-off'}" class="h-4 w-4"></i>`;
+            lucide.createIcons();
+        });
+    });
+</script>
 </body>
 </html>

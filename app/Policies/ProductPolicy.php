@@ -32,6 +32,11 @@ class ProductPolicy
         return $user->hasPermission('products.delete');
     }
 
+    public function bulkDelete(User $user): bool
+    {
+        return $user->hasPermission('products.delete');
+    }
+
     public function disable(User $user, Product $product): bool
     {
         return $user->hasPermission('products.disable');
@@ -55,5 +60,10 @@ class ProductPolicy
     public function export(User $user): bool
     {
         return $user->hasPermission('products.export');
+    }
+
+    public function import(User $user): bool
+    {
+        return $user->hasPermission('products.import');
     }
 }

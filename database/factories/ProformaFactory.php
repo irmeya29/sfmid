@@ -18,6 +18,7 @@ class ProformaFactory extends Factory
             'status' => DocumentStatus::Draft,
             'issue_date' => now()->toDateString(),
             'valid_until' => now()->addDays(15)->toDateString(),
+            'subject' => 'Fourniture de produits et services',
             'subtotal' => 0,
             'discount_total' => 0,
             'tax_total' => 0,

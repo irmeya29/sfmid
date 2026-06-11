@@ -37,7 +37,14 @@ class SaveProformaAction
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if (! $proforma->status->isEditable()) {
+                if (
+                    ! $proforma->status->isEditable()
+                    && ! (
+                        $user->hasPermission('sensitive.update_validated_document')
+                        && $proforma->status !== DocumentStatus::Converted
+                        && $proforma->status !== DocumentStatus::Cancelled
+                    )
+                ) {
                     throw new RuntimeException('Cette proforma ne peut plus être modifiée.');
                 }
 
@@ -47,6 +54,7 @@ class SaveProformaAction
                     'status',
                     'issue_date',
                     'valid_until',
+                    'subject',
                     'incoterm',
                     'currency',
                     'payment_terms',
@@ -71,7 +79,7 @@ class SaveProformaAction
                 ]);
             }
 
-            $totals = $this->buildItemsAndTotals($data['items'], (int) $data['client_id']);
+            $totals = $this->buildItemsAndTotals($data['items'], (int) $data['client_id'], $this->globalTaxRate($data));
 
             $newStatus = $user->bypassesDocumentValidation()
                 ? DocumentStatus::Validated
@@ -88,6 +96,7 @@ class SaveProformaAction
                 'validated_at' => $newStatus === DocumentStatus::Validated ? now() : $proforma->validated_at,
                 'issue_date' => $data['issue_date'],
                 'valid_until' => $data['valid_until'] ?? null,
+                'subject' => $data['subject'],
                 'incoterm' => $data['incoterm'] ?? null,
                 'currency' => $data['currency'] ?? 'FCFA',
                 'payment_terms' => $data['payment_terms'] ?? null,
@@ -144,6 +153,7 @@ class SaveProformaAction
                     'status',
                     'issue_date',
                     'valid_until',
+                    'subject',
                     'incoterm',
                     'currency',
                     'payment_terms',
@@ -165,7 +175,7 @@ class SaveProformaAction
      * @param  array<int, array<string, mixed>>  $items
      * @return array{subtotal: float, discount_total: float, tax_total: float, total: float, items: array<int, array<string, mixed>>}
      */
-    private function buildItemsAndTotals(array $items, int $clientId): array
+    private function buildItemsAndTotals(array $items, int $clientId, float $taxRate): array
     {
         $preparedItems = [];
         $subtotal = 0;
@@ -187,8 +197,6 @@ class SaveProformaAction
                 : (float) $product->sale_price;
 
             $discountRate = isset($item['discount_rate']) ? (float) $item['discount_rate'] : 0;
-            $taxRate = isset($item['tax_rate']) ? (float) $item['tax_rate'] : 0;
-
             if ($quantity <= 0) {
                 throw new RuntimeException("Quantité invalide pour {$product->name}.");
             }
@@ -238,5 +246,15 @@ class SaveProformaAction
             'total' => round($subtotal - $discountTotal + $taxTotal, 2),
             'items' => $preparedItems,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function globalTaxRate(array $data): float
+    {
+        return (bool) ($data['apply_tax'] ?? false)
+            ? (float) ($data['tax_rate'] ?? 0)
+            : 0.0;
     }
 }

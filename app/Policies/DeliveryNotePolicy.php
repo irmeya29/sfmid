@@ -26,7 +26,15 @@ class DeliveryNotePolicy
     public function update(User $user, DeliveryNote $deliveryNote): bool
     {
         return $user->hasPermission('delivery_notes.update')
-            && $deliveryNote->status->isEditable();
+            && (
+                $deliveryNote->status->isEditable()
+                || (
+                    $user->hasPermission('sensitive.update_validated_document')
+                    && $deliveryNote->status !== DeliveryNoteStatus::Invoiced
+                    && $deliveryNote->status !== DeliveryNoteStatus::Cancelled
+                    && ! $deliveryNote->hasStockAlreadyMoved()
+                )
+            );
     }
 
     public function delete(User $user, DeliveryNote $deliveryNote): bool

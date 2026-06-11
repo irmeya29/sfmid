@@ -21,7 +21,12 @@ class InvoiceItem extends Model
         'unit',
         'quantity',
         'unit_price',
+        'line_subtotal',
         'discount_amount',
+        'tax_rate',
+        'tax_amount',
+        'line_total_ht',
+        'line_total_ttc',
         'line_total',
     ];
 
@@ -30,7 +35,12 @@ class InvoiceItem extends Model
         return [
             'quantity' => 'decimal:3',
             'unit_price' => 'decimal:2',
+            'line_subtotal' => 'decimal:2',
             'discount_amount' => 'decimal:2',
+            'tax_rate' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
+            'line_total_ht' => 'decimal:2',
+            'line_total_ttc' => 'decimal:2',
             'line_total' => 'decimal:2',
         ];
     }

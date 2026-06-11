@@ -65,6 +65,7 @@ class ConvertProformaToDeliveryNoteAction
                 'validated_by' => $deliveryNoteStatus === DeliveryNoteStatus::Validated ? $user->id : null,
                 'validated_at' => $deliveryNoteStatus === DeliveryNoteStatus::Validated ? now() : null,
                 'planned_delivery_date' => null,
+                'subject' => $proforma->subject,
                 'delivered_at' => null,
                 'delivered_by' => null,
                 'receiver_name' => null,

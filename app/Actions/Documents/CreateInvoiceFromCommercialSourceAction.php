@@ -69,6 +69,9 @@ class CreateInvoiceFromCommercialSourceAction
                 'validated_at' => $status === InvoiceStatus::Validated ? now() : null,
                 'issue_date' => now()->toDateString(),
                 'due_date' => now()->addDays(30)->toDateString(),
+                'subject' => $source instanceof Proforma ? $source->subject : "Facturation du bon de commande {$source->number}",
+                'incoterm' => $source instanceof Proforma ? $source->incoterm : null,
+                'currency' => $source instanceof Proforma ? ($source->currency ?: 'FCFA') : 'FCFA',
                 'subtotal' => $source->subtotal,
                 'discount_total' => $source->discount_total,
                 'tax_total' => $source->tax_total,
@@ -76,6 +79,7 @@ class CreateInvoiceFromCommercialSourceAction
                 'paid_amount' => 0,
                 'balance_due' => $source->total,
                 'payment_terms' => $source instanceof Proforma ? ($source->payment_terms ?? $source->terms) : $source->confirmed_terms,
+                'delivery_delay' => $source instanceof Proforma ? $source->delivery_delay : null,
                 'notes' => $source->notes ?? null,
                 'created_by' => $user->id,
             ]);
@@ -93,7 +97,12 @@ class CreateInvoiceFromCommercialSourceAction
                     'unit' => $item->unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
+                    'line_subtotal' => $item->line_subtotal ?? ((float) $item->quantity * (float) $item->unit_price),
                     'discount_amount' => $item->discount_amount,
+                    'tax_rate' => $item->tax_rate ?? 0,
+                    'tax_amount' => $item->tax_amount ?? 0,
+                    'line_total_ht' => $item->line_total_ht ?? (((float) $item->quantity * (float) $item->unit_price) - (float) $item->discount_amount),
+                    'line_total_ttc' => $item->line_total_ttc ?? $item->line_total,
                     'line_total' => $item->line_total_ttc ?? $item->line_total,
                 ]);
             }

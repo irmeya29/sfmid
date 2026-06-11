@@ -8,7 +8,7 @@
 <style>
     @page { margin: 3.9cm 1.35cm 3.9cm; }
     * { box-sizing: border-box; }
-    body { color: #27364a; font-family: DejaVu Sans, Arial, sans-serif; font-size: 11.5px; font-weight: 400; line-height: 1.5; margin: 0; }
+    body { color: #27364a; font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; font-weight: 400; line-height: 1.52; margin: 0; }
     .pdf-letterhead { left: -1.35cm; position: fixed; right: -1.35cm; top: -3.9cm; }
     .letterhead-image { display: block; width: 100%; }
     .letterhead-accent { background: #2676B3; border-bottom: 3px solid #FA820A; height: 8px; margin: 0; }
@@ -22,7 +22,7 @@
     .doc-panel-title { border: 2px solid #2676B3; color: #2676B3; display: inline-block; font-size: 16px; font-weight: 700; line-height: 1; margin-bottom: 8px; padding: 8px 13px; text-transform: uppercase; }
     .doc-panel-heading { color: #2676B3; font-size: 10px; font-weight: 700; letter-spacing: .3px; margin-bottom: 7px; text-transform: uppercase; }
     .doc-panel-line { line-height: 1.45; margin-top: 2px; }
-    .doc-panel-label { color: #667085; display: inline-block; min-width: 58px; }
+    .doc-panel-label { color: #667085; display: inline-block; line-height: 1.45; min-width: 58px; vertical-align: baseline; }
     .doc-reference { font-size: 10px; margin-top: 6px; }
     .doc-main-title { color: #17324D; font-size: 11px; font-weight: 600; margin-bottom: 2px; text-transform: uppercase; }
     .document-lines { border: 1px solid #cfd9e4; margin-top: 6px; table-layout: fixed; }
@@ -45,23 +45,27 @@
     .erp-title-main .type { color: #2676B3; font-size: 25px; font-weight: 700; line-height: 1.05; text-transform: uppercase; }
     .erp-title-main .number { color: #667085; font-size: 11px; margin-top: 4px; }
     .erp-title-meta { text-align: right; }
-    .erp-title-meta .meta-line { color: #334155; font-size: 10.5px; margin-bottom: 3px; }
+    .erp-title-meta .meta-line { color: #334155; font-size: 11px; margin-bottom: 3px; }
     .erp-status { background: #FFF3E7; border: 1px solid #FA820A; color: #A94D00; display: inline-block; font-size: 9.5px; font-weight: 700; padding: 4px 9px; text-transform: uppercase; }
-    .erp-info { border-collapse: separate; border-spacing: 0; margin: 0 0 16px; table-layout: fixed; width: 100%; }
+    .erp-info { border-collapse: separate; border-spacing: 0 0; margin: 0 0 22px; table-layout: fixed; width: 100%; }
     .erp-info td { border: 0; padding: 0; vertical-align: top; }
-    .erp-info-gap { width: 12px; }
-    .erp-card { border: 1px solid #cfd9e4; min-height: 112px; padding: 11px 12px; }
-    .erp-card-title { border-bottom: 2px solid #FA820A; color: #2676B3; font-size: 10px; font-weight: 700; letter-spacing: .35px; margin-bottom: 8px; padding-bottom: 5px; text-transform: uppercase; }
-    .erp-card-name { color: #10203f; font-size: 13px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
+    .erp-info-gap { width: 20px; }
+    .erp-card { background: #fbfdff; border-left: 3px solid #2676B3; min-height: 112px; padding: 12px 13px; }
+    .erp-card-title { color: #2676B3; font-size: 10.5px; font-weight: 700; letter-spacing: .35px; margin-bottom: 8px; padding-bottom: 5px; text-transform: uppercase; }
+    .erp-card-name { color: #10203f; font-size: 13.5px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
     .erp-row { line-height: 1.45; margin-top: 2px; }
-    .erp-label { color: #667085; display: inline-block; min-width: 72px; }
+    .erp-label { color: #667085; display: inline-block; line-height: 1.45; min-width: 72px; vertical-align: baseline; }
+    .erp-value { display: inline-block; line-height: 1.45; position: relative; top: -1px; vertical-align: baseline; }
+    .erp-subject { background: #f8fbfd; border-left: 3px solid #FA820A; color: #10203f; font-size: 11.5px; line-height: 1.45; margin: -8px 0 12px; padding: 9px 11px; page-break-inside: avoid; }
+    .erp-subject strong { color: #2676B3; display: inline; font-size: 11.5px; line-height: 1.45; margin-right: 4px; text-transform: uppercase; vertical-align: baseline; }
+    .erp-subject .erp-subject-text { display: inline; font-size: 11.5px; line-height: 1.45; vertical-align: baseline; }
     .erp-lines { border: 1px solid #cfd9e4; table-layout: fixed; }
-    .erp-lines th { background: #2676B3; border-right: 1px solid rgba(255,255,255,.28); color: #fff; font-size: 9.4px; font-weight: 700; padding: 8px 7px; text-transform: uppercase; }
+    .erp-lines th { background: #2676B3; border-right: 1px solid rgba(255,255,255,.28); color: #fff; font-size: 9.8px; font-weight: 700; padding: 8px 7px; text-transform: uppercase; }
     .erp-lines th:last-child { border-right: 0; }
     .erp-lines td { border-bottom: 1px solid #e6edf3; padding: 7px; }
     .erp-lines tbody tr:nth-child(even) td { background: #f7fafc; }
     .erp-lines tbody tr:nth-child(odd) td { background: #fff; }
-    .erp-lines .ref { color: #64748b; font-size: 10px; }
+    .erp-lines .ref { color: #64748b; font-size: 10.5px; }
     .erp-lines .name { color: #10203f; font-weight: 600; }
     .erp-after-lines { clear: both; margin-top: 14px; width: 100%; }
     .erp-notes { color: #475569; float: left; font-size: 10.5px; line-height: 1.45; width: 56%; }
@@ -70,11 +74,12 @@
     .erp-totals tr:last-child td { border-bottom: 0; }
     .erp-totals .grand td { background: #2676B3 !important; border-top: 2px solid #FA820A; color: #fff; font-size: 13px; font-weight: 700; }
     .erp-clear { clear: both; }
-    .amount-in-words { border: 1px solid #dbe3ea; clear: both; color: #10203f; font-size: 11px; line-height: 1.55; margin-top: 16px; padding: 10px 12px; page-break-inside: avoid; }
+    .amount-in-words { clear: both; color: #10203f; font-size: 10.5px; line-height: 1.45; margin-top: 16px; padding: 0; page-break-inside: avoid; white-space: nowrap; }
     .amount-in-words strong { color: #17324D; text-transform: uppercase; }
-    .stamp-area { clear: both; margin-top: 34px; page-break-inside: avoid; text-align: right; }
+    .stamp-area { clear: both; margin-top: 42px; page-break-inside: avoid; text-align: right; }
     .stamp-box { border: 1px dashed #94a3b8; display: inline-block; height: 118px; padding: 10px; text-align: center; vertical-align: top; width: 260px; }
     .stamp-box-title { color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .responsible-title { color: #10203f; display: inline-block; font-size: 11px; font-weight: 700; padding-right: 34px; text-transform: uppercase; }
     footer { bottom: -3.9cm; color: #667085; font-size: 8.5px; left: -1.35cm; position: fixed; right: -1.35cm; text-align: center; }
     .footer-image { display: block; width: 100%; }
     .footer-accent { background: #2676B3; border-top: 2px solid #FA820A; height: 5px; margin: 0 0 8px; }

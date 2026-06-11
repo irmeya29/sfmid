@@ -49,6 +49,7 @@ class DeliveryNoteHttpTest extends TestCase
             'client_id' => $client->id,
             'client_delivery_site_id' => $site->id,
             'planned_delivery_date' => now()->addDay()->toDateString(),
+            'subject' => 'Livraison de flexibles hydrauliques',
             'notes' => 'Livraison matin.',
             'items' => [
                 [
@@ -65,6 +66,7 @@ class DeliveryNoteHttpTest extends TestCase
 
         $storeResponse->assertRedirect(route('delivery-notes.show', $deliveryNote));
         $this->assertSame('BL-'.now()->format('Y').'-00001', $deliveryNote->number);
+        $this->assertSame('Livraison de flexibles hydrauliques', $deliveryNote->subject);
         $this->assertSame('23000.00', $deliveryNote->total);
 
         $this->actingAs($user)->get(route('delivery-notes.show', $deliveryNote))
@@ -75,6 +77,7 @@ class DeliveryNoteHttpTest extends TestCase
             'client_id' => $client->id,
             'client_delivery_site_id' => $site->id,
             'planned_delivery_date' => now()->addDays(2)->toDateString(),
+            'subject' => 'Livraison de raccords hydrauliques',
             'notes' => null,
             'items' => [
                 [
@@ -87,6 +90,7 @@ class DeliveryNoteHttpTest extends TestCase
             ],
         ])->assertRedirect(route('delivery-notes.show', $deliveryNote));
 
+        $this->assertSame('Livraison de raccords hydrauliques', $deliveryNote->refresh()->subject);
         $this->assertSame('36000.00', $deliveryNote->refresh()->total);
 
         $this->actingAs($user)->delete(route('delivery-notes.destroy', $deliveryNote))
@@ -107,6 +111,7 @@ class DeliveryNoteHttpTest extends TestCase
             'client_id' => $client->id,
             'client_delivery_site_id' => $otherSite->id,
             'planned_delivery_date' => now()->toDateString(),
+            'subject' => 'Livraison de pieces',
             'items' => [
                 ['product_id' => $product->id, 'quantity' => 1, 'delivered_quantity' => 1, 'unit_price' => 1000, 'discount_amount' => 0],
                 ['product_id' => $product->id, 'quantity' => 1, 'delivered_quantity' => 1, 'unit_price' => 1000, 'discount_amount' => 0],

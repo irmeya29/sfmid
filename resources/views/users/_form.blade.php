@@ -28,13 +28,23 @@
     @else
         <div>
             <label class="text-sm font-semibold text-slate-700">Mot de passe</label>
-            <input type="password" name="password" class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm" required>
+            <div class="relative mt-1">
+                <input id="user-password" type="password" name="password" class="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-sm" required>
+                <button type="button" data-password-toggle="user-password" class="absolute inset-y-0 right-3 flex items-center rounded-lg px-2 text-slate-400 hover:text-slate-950" aria-label="Afficher le mot de passe">
+                    <i data-lucide="eye" class="h-4 w-4"></i>
+                </button>
+            </div>
             @error('password')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
         </div>
 
         <div>
             <label class="text-sm font-semibold text-slate-700">Confirmation</label>
-            <input type="password" name="password_confirmation" class="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm" required>
+            <div class="relative mt-1">
+                <input id="user-password-confirmation" type="password" name="password_confirmation" class="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-sm" required>
+                <button type="button" data-password-toggle="user-password-confirmation" class="absolute inset-y-0 right-3 flex items-center rounded-lg px-2 text-slate-400 hover:text-slate-950" aria-label="Afficher la confirmation">
+                    <i data-lucide="eye" class="h-4 w-4"></i>
+                </button>
+            </div>
         </div>
 
         <label class="flex items-center gap-3 text-sm font-semibold text-slate-700">

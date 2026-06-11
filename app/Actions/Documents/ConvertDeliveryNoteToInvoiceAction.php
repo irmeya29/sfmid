@@ -34,7 +34,7 @@ class ConvertDeliveryNoteToInvoiceAction
 
         return DB::transaction(function () use ($deliveryNote, $user): Invoice {
             $deliveryNote = DeliveryNote::query()
-                ->with(['items', 'invoice', 'stockSuspenses'])
+                ->with(['items', 'invoice', 'stockSuspenses', 'proforma'])
                 ->whereKey($deliveryNote->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -71,13 +71,17 @@ class ConvertDeliveryNoteToInvoiceAction
                 'validated_at' => $invoiceStatus === InvoiceStatus::Validated ? now() : null,
                 'issue_date' => now()->toDateString(),
                 'due_date' => now()->addDays(30)->toDateString(),
+                'subject' => $deliveryNote->subject ?: $deliveryNote->proforma?->subject ?: "Facturation du BL {$deliveryNote->number}",
+                'incoterm' => $deliveryNote->proforma?->incoterm,
+                'currency' => $deliveryNote->proforma?->currency ?: 'FCFA',
                 'subtotal' => $deliveryNote->subtotal,
                 'discount_total' => $deliveryNote->discount_total,
                 'tax_total' => $deliveryNote->tax_total,
                 'total' => $deliveryNote->total,
                 'paid_amount' => 0,
                 'balance_due' => $deliveryNote->total,
-                'payment_terms' => null,
+                'payment_terms' => $deliveryNote->proforma?->payment_terms ?? $deliveryNote->proforma?->terms,
+                'delivery_delay' => $deliveryNote->proforma?->delivery_delay,
                 'notes' => $deliveryNote->notes,
                 'created_by' => $user->id,
             ]);
@@ -93,7 +97,12 @@ class ConvertDeliveryNoteToInvoiceAction
                     'unit' => $item->unit,
                     'quantity' => $item->delivered_quantity,
                     'unit_price' => $item->unit_price,
+                    'line_subtotal' => (float) $item->delivered_quantity * (float) $item->unit_price,
                     'discount_amount' => $item->discount_amount,
+                    'tax_rate' => 0,
+                    'tax_amount' => 0,
+                    'line_total_ht' => $item->line_total,
+                    'line_total_ttc' => $item->line_total,
                     'line_total' => $item->line_total,
                 ]);
             }

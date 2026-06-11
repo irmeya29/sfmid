@@ -53,6 +53,7 @@ class ProformaHttpTest extends TestCase
             'client_delivery_site_id' => $site->id,
             'issue_date' => now()->toDateString(),
             'valid_until' => now()->addDays(15)->toDateString(),
+            'subject' => 'Fourniture de flexibles hydrauliques',
             'terms' => 'Paiement comptant.',
             'notes' => 'Livraison urgente.',
             'items' => [
@@ -69,6 +70,7 @@ class ProformaHttpTest extends TestCase
 
         $storeResponse->assertRedirect(route('proformas.show', $proforma));
         $this->assertSame($site->id, $proforma->client_delivery_site_id);
+        $this->assertSame('Fourniture de flexibles hydrauliques', $proforma->subject);
         $this->assertSame('PRO-'.now()->format('Y').'-00001', $proforma->number);
         $this->assertDatabaseHas('proforma_items', [
             'proforma_id' => $proforma->id,
@@ -87,6 +89,7 @@ class ProformaHttpTest extends TestCase
             'client_delivery_site_id' => $site->id,
             'issue_date' => now()->toDateString(),
             'valid_until' => now()->addDays(10)->toDateString(),
+            'subject' => 'Fourniture de raccords hydrauliques',
             'terms' => 'Paiement 15 jours.',
             'notes' => null,
             'items' => [
@@ -99,6 +102,7 @@ class ProformaHttpTest extends TestCase
             ],
         ])->assertRedirect(route('proformas.show', $proforma));
 
+        $this->assertSame('Fourniture de raccords hydrauliques', $proforma->refresh()->subject);
         $this->assertSame('45000.00', $proforma->refresh()->total);
 
         $this->actingAs($user)->delete(route('proformas.destroy', $proforma))
@@ -124,6 +128,7 @@ class ProformaHttpTest extends TestCase
             'client_id' => $client->id,
             'client_delivery_site_id' => $otherSite->id,
             'issue_date' => now()->toDateString(),
+            'subject' => 'Fourniture de pieces',
             'items' => [
                 [
                     'product_id' => $product->id,

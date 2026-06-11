@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CommercialDocumentStatusController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\DeliveryNoteValidationController;
@@ -144,6 +145,26 @@ Route::middleware(['auth'])->group(function (): void {
     Route::resource('product-categories', ProductCategoryController::class)
         ->except(['show'])
         ->middleware('permission:products.view|products.create|products.update|products.delete');
+
+    Route::get('/products/search/document-lines', [ProductController::class, 'searchForDocumentLines'])
+        ->name('products.search.document-lines')
+        ->middleware('permission:products.view');
+
+    Route::get('/products/import', [ProductController::class, 'importPage'])
+        ->name('products.import.create')
+        ->middleware('permission:products.import');
+
+    Route::get('/products/import/template', [ProductController::class, 'downloadImportTemplate'])
+        ->name('products.import.template')
+        ->middleware('permission:products.import');
+
+    Route::post('/products/import', [ProductController::class, 'importCsv'])
+        ->name('products.import')
+        ->middleware('permission:products.import');
+
+    Route::delete('/products/bulk-delete', [ProductController::class, 'bulkDestroy'])
+        ->name('products.bulk-destroy')
+        ->middleware('permission:products.delete');
 
     Route::resource('products', ProductController::class)
         ->middleware('permission:products.view|products.create|products.update|products.delete');
@@ -298,6 +319,10 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('proformas.convert-to-invoice')
         ->middleware('permission:invoices.create');
 
+    Route::patch('/proformas/{proforma}/status', [CommercialDocumentStatusController::class, 'updateProforma'])
+        ->name('proformas.status.update')
+        ->middleware('permission:sensitive.update_validated_document');
+
     Route::resource('delivery-notes', DeliveryNoteController::class)
         ->middleware('permission:delivery_notes.view|delivery_notes.create|delivery_notes.update|delivery_notes.delete_draft');
 
@@ -325,9 +350,17 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('delivery-notes.mark-delivered')
         ->middleware('permission:delivery_notes.mark_delivered');
 
+    Route::patch('/delivery-notes/{deliveryNote}/status', [CommercialDocumentStatusController::class, 'updateDeliveryNote'])
+        ->name('delivery-notes.status.update')
+        ->middleware('permission:sensitive.update_validated_document');
+
     Route::resource('invoices', InvoiceController::class)
         ->except(['destroy'])
         ->middleware('permission:invoices.view|invoices.create|invoices.update');
+
+    Route::patch('/invoices/{invoice}/status', [CommercialDocumentStatusController::class, 'updateInvoice'])
+        ->name('invoices.status.update')
+        ->middleware('permission:sensitive.update_validated_document');
 
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])
         ->name('invoices.pdf')

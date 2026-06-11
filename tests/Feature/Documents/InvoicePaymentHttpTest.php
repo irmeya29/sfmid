@@ -119,6 +119,7 @@ class InvoicePaymentHttpTest extends TestCase
             'client_id' => \App\Models\Client::factory()->create()->id,
             'issue_date' => now()->toDateString(),
             'due_date' => now()->addDays(7)->toDateString(),
+            'subject' => 'Facturation vente comptoir',
             'payment_terms' => 'Paiement comptant',
             'items' => [
                 [
@@ -133,6 +134,7 @@ class InvoicePaymentHttpTest extends TestCase
         $invoice = Invoice::query()->with('items')->firstOrFail();
 
         $this->assertNull($invoice->delivery_note_id);
+        $this->assertSame('Facturation vente comptoir', $invoice->subject);
         $this->assertSame(InvoiceStatus::Draft, $invoice->status);
         $this->assertSame(50000.0, (float) $invoice->subtotal);
         $this->assertSame(5000.0, (float) $invoice->discount_total);

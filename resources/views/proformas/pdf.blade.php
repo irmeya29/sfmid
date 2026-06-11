@@ -15,7 +15,6 @@
         'documentTitle' => 'Proforma',
         'documentNumber' => $proforma->number,
         'documentDate' => $proforma->issue_date?->format('d/m/Y'),
-        'documentStatus' => $proforma->status->label(),
         'hideDocumentHeading' => true,
     ])
     @include('pdf._footer')
@@ -29,8 +28,6 @@
                 </td>
                 <td class="erp-title-meta">
                     <div class="meta-line">Date : <strong>{{ $proforma->issue_date?->format('d/m/Y') ?: '-' }}</strong></div>
-                    <div class="meta-line">Validite : <strong>{{ $proforma->valid_until?->format('d/m/Y') ?: '-' }}</strong></div>
-                    <span class="erp-status">{{ $proforma->status->label() }}</span>
                 </td>
             </tr>
         </table>
@@ -41,11 +38,11 @@
                     <div class="erp-card">
                         <div class="erp-card-title">Client</div>
                         <div class="erp-card-name">{{ $proforma->client?->name ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Code client</span> {{ $proforma->client?->code ?: '-' }}</div>
-                        @if($proforma->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span> {{ $proforma->client->phone }}</div>@endif
-                        @if($proforma->client?->email)<div class="erp-row"><span class="erp-label">Email</span> {{ $proforma->client->email }}</div>@endif
-                        @if($proforma->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span> {{ $proforma->client->ifu }}</div>@endif
-                        @if($proforma->client?->rccm)<div class="erp-row"><span class="erp-label">RCCM</span> {{ $proforma->client->rccm }}</div>@endif
+                        <div class="erp-row"><span class="erp-label">Code client</span><span class="erp-value">{{ $proforma->client?->code ?: '-' }}</span></div>
+                        @if($proforma->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $proforma->client->phone }}</span></div>@endif
+                        @if($proforma->client?->email)<div class="erp-row"><span class="erp-label">Email</span><span class="erp-value">{{ $proforma->client->email }}</span></div>@endif
+                        @if($proforma->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span><span class="erp-value">{{ $proforma->client->ifu }}</span></div>@endif
+                        @if($proforma->client?->rccm)<div class="erp-row"><span class="erp-label">RCCM</span><span class="erp-value">{{ $proforma->client->rccm }}</span></div>@endif
                     </div>
                 </td>
                 <td class="erp-info-gap"></td>
@@ -53,43 +50,41 @@
                     <div class="erp-card">
                         <div class="erp-card-title">Conditions commerciales</div>
                         @if($proforma->deliverySite)
-                            <div class="erp-row"><span class="erp-label">Site</span> {{ $proforma->deliverySite->name }}</div>
-                            @if($proforma->deliverySite->address)<div class="erp-row"><span class="erp-label">Adresse</span> {{ $proforma->deliverySite->address }}</div>@endif
+                            <div class="erp-row"><span class="erp-label">Site</span><span class="erp-value">{{ $proforma->deliverySite->name }}</span></div>
+                            @if($proforma->deliverySite->address)<div class="erp-row"><span class="erp-label">Adresse</span><span class="erp-value">{{ $proforma->deliverySite->address }}</span></div>@endif
                         @else
-                            <div class="erp-row"><span class="erp-label">Site</span> Non renseigne</div>
+                            <div class="erp-row"><span class="erp-label">Site</span><span class="erp-value">Non renseigne</span></div>
                         @endif
-                        <div class="erp-row"><span class="erp-label">Incoterm</span> {{ $proforma->incoterm ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Reglement</span> {{ $proforma->payment_terms ?: $proforma->terms ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Delai livraison</span> {{ $proforma->delivery_delay ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Devise</span> {{ $currency }}</div>
+                        <div class="erp-row"><span class="erp-label">Incoterm</span><span class="erp-value">{{ $proforma->incoterm ?: '-' }}</span></div>
+                        <div class="erp-row"><span class="erp-label">Reglement</span><span class="erp-value">{{ $proforma->payment_terms ?: $proforma->terms ?: '-' }}</span></div>
+                        <div class="erp-row"><span class="erp-label">Delai livraison</span><span class="erp-value">{{ $proforma->delivery_delay ?: '-' }}</span></div>
+                        <div class="erp-row"><span class="erp-label">Devise</span><span class="erp-value">{{ $currency }}</span></div>
                     </div>
                 </td>
             </tr>
         </table>
 
+        <div class="erp-subject"><strong>Objet :</strong><span class="erp-subject-text">{{ $proforma->subject ?: '-' }}</span></div>
+
         <table class="erp-lines">
             <thead>
                 <tr>
-                    <th style="width: 14%;">Reference</th>
+                    <th style="width: 16%;">Reference</th>
                     <th>Designation</th>
                     <th style="width: 8%;" class="right">Qte</th>
                     <th style="width: 9%;">Unite</th>
                     <th style="width: 13%;" class="right">Prix U</th>
-                    <th style="width: 9%;" class="right">Remise</th>
-                    <th style="width: 9%;" class="right">TVA</th>
-                    <th style="width: 13%;" class="right">Montant</th>
+                    <th style="width: 15%;" class="right">Montant</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($proforma->items as $item)
                     <tr>
-                        <td class="ref">{{ $item->client_product_reference ?: ($item->product_internal_reference ?: $item->product_code) }}</td>
-                        <td class="name">{{ $item->product_name }}<br><span class="muted-cell">Ref SFMID : {{ $item->product_internal_reference ?: $item->product_code }}</span></td>
+                        <td class="ref">{{ $item->client_product_reference ?: $item->product_code }}</td>
+                        <td class="name">{{ $item->product_name }}</td>
                         <td class="right">{{ $qty($item->quantity) }}</td>
                         <td>{{ $item->unit }}</td>
                         <td class="right">{{ number_format((float) $item->unit_price, 0, ',', ' ') }}</td>
-                        <td class="right">{{ number_format((float) $item->discount_amount, 0, ',', ' ') }}</td>
-                        <td class="right">{{ number_format((float) ($item->tax_amount ?? 0), 0, ',', ' ') }}</td>
                         <td class="right strong">{{ number_format((float) ($item->line_total_ttc ?? $item->line_total), 0, ',', ' ') }}</td>
                     </tr>
                 @endforeach
@@ -113,15 +108,11 @@
         </div>
 
         <div class="amount-in-words">
-            Arr&ecirc;t&eacute;e la pr&eacute;sente proforma &agrave; la somme de :
-            <br>
-            <strong>{{ \App\Support\NumberFormatter::moneyToWords($proforma->total, $currency) }}</strong>.
+            Arr&ecirc;t&eacute;e la pr&eacute;sente proforma &agrave; la somme de : <strong>{{ \App\Support\NumberFormatter::moneyToWords($proforma->total, $currency) }}</strong>.
         </div>
 
         <div class="stamp-area">
-            <div class="stamp-box">
-                <div class="stamp-box-title">Signature et cachet</div>
-            </div>
+            <div class="responsible-title">LE RESPONSABLE</div>
         </div>
     </main>
 </body>

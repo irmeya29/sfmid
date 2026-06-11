@@ -26,6 +26,7 @@ class UpdateDeliveryNoteRequest extends FormRequest
                     ->where('client_id', $this->integer('client_id')),
             ],
             'planned_delivery_date' => ['nullable', 'date'],
+            'subject' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
 
             'items' => ['required', 'array', 'min:1'],

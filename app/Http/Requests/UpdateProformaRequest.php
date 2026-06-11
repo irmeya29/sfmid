@@ -27,10 +27,13 @@ class UpdateProformaRequest extends FormRequest
             ],
             'issue_date' => ['required', 'date'],
             'valid_until' => ['nullable', 'date', 'after_or_equal:issue_date'],
+            'subject' => ['required', 'string', 'max:255'],
             'incoterm' => ['nullable', 'string', 'max:50'],
             'currency' => ['nullable', 'string', 'max:20'],
             'payment_terms' => ['nullable', 'string', 'max:1000'],
             'delivery_delay' => ['nullable', 'string', 'max:255'],
+            'apply_tax' => ['nullable', 'boolean'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'terms' => ['nullable', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:2000'],
 
@@ -39,7 +42,6 @@ class UpdateProformaRequest extends FormRequest
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

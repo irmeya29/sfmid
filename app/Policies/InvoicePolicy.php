@@ -26,11 +26,19 @@ class InvoicePolicy
     public function update(User $user, Invoice $invoice): bool
     {
         return $user->hasPermission('invoices.update')
-            && in_array($invoice->status, [
-                InvoiceStatus::Draft,
-                InvoiceStatus::Rejected,
-                InvoiceStatus::Corrected,
-            ], true);
+            && (
+                in_array($invoice->status, [
+                    InvoiceStatus::Draft,
+                    InvoiceStatus::Rejected,
+                    InvoiceStatus::Corrected,
+                ], true)
+                || (
+                    $user->hasPermission('sensitive.update_validated_document')
+                    && $invoice->status !== InvoiceStatus::Paid
+                    && $invoice->status !== InvoiceStatus::Cancelled
+                    && ! $invoice->payments()->exists()
+                )
+            );
     }
 
     public function delete(User $user, Invoice $invoice): bool

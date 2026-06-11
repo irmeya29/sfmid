@@ -20,6 +20,7 @@ class InvoiceFactory extends Factory
             'status' => InvoiceStatus::Draft,
             'issue_date' => now()->toDateString(),
             'due_date' => now()->addDays(30)->toDateString(),
+            'subject' => 'Facturation de produits et services',
             'subtotal' => $total,
             'discount_total' => 0,
             'tax_total' => 0,

@@ -48,8 +48,18 @@
             @can('resetPassword', $user)
                 <form method="POST" action="{{ route('users.reset-password', $user) }}" class="mt-4 space-y-4">
                     @csrf
-                    <input type="password" name="password" placeholder="Nouveau mot de passe" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm" required>
-                    <input type="password" name="password_confirmation" placeholder="Confirmation" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm" required>
+                    <div class="relative">
+                        <input id="reset-password" type="password" name="password" placeholder="Nouveau mot de passe" class="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-sm" required>
+                        <button type="button" data-password-toggle="reset-password" class="absolute inset-y-0 right-3 flex items-center rounded-lg px-2 text-slate-400 hover:text-slate-950" aria-label="Afficher le mot de passe">
+                            <i data-lucide="eye" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input id="reset-password-confirmation" type="password" name="password_confirmation" placeholder="Confirmation" class="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-sm" required>
+                        <button type="button" data-password-toggle="reset-password-confirmation" class="absolute inset-y-0 right-3 flex items-center rounded-lg px-2 text-slate-400 hover:text-slate-950" aria-label="Afficher la confirmation">
+                            <i data-lucide="eye" class="h-4 w-4"></i>
+                        </button>
+                    </div>
                     <x-button type="submit" icon="key-round" class="w-full">Reinitialiser</x-button>
                 </form>
             @else

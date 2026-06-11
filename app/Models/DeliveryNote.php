@@ -25,6 +25,7 @@ class DeliveryNote extends Model
         'client_delivery_site_id',
         'status',
         'planned_delivery_date',
+        'subject',
         'delivered_at',
         'delivered_by',
         'receiver_name',

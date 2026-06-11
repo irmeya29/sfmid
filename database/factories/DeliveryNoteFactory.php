@@ -20,6 +20,7 @@ class DeliveryNoteFactory extends Factory
             'client_delivery_site_id' => null,
             'status' => DeliveryNoteStatus::Draft,
             'planned_delivery_date' => now()->addDay()->toDateString(),
+            'subject' => 'Livraison de produits et services',
             'delivered_at' => null,
             'delivered_by' => null,
             'receiver_name' => null,

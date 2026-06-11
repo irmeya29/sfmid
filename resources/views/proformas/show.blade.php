@@ -65,6 +65,13 @@
         </x-alert>
     @endif
 
+    @include('commercial-documents._status-admin', [
+        'action' => route('proformas.status.update', $proforma),
+        'currentStatus' => $proforma->status,
+        'statuses' => \App\Enums\DocumentStatus::cases(),
+        'title' => 'Administration du statut proforma',
+    ])
+
     <div class="grid gap-5 lg:grid-cols-3">
         <x-card class="lg:col-span-2">
             <div class="flex items-start justify-between gap-4">
@@ -107,6 +114,10 @@
         <x-card>
             <h3 class="text-base font-semibold text-slate-950">Conditions commerciales</h3>
             <div class="mt-5 space-y-3 text-sm">
+                <div class="border-b border-slate-200 pb-3">
+                    <p class="text-slate-500">Objet</p>
+                    <p class="mt-1 font-semibold text-slate-950">{{ $proforma->subject ?: 'Non renseigne' }}</p>
+                </div>
                 <div class="flex justify-between gap-4">
                     <span class="text-slate-500">Incoterm</span>
                     <strong class="text-right text-slate-950">{{ $proforma->incoterm ?: '-' }}</strong>

@@ -48,18 +48,21 @@ class AdminDocumentValidationBypassTest extends TestCase
         $proforma = app(SaveProformaAction::class)->execute([
             'client_id' => $client->id,
             'issue_date' => now()->toDateString(),
+            'subject' => 'Fourniture de pieces hydrauliques',
             'items' => $items,
         ], $admin);
 
         $deliveryNote = app(SaveDeliveryNoteAction::class)->execute([
             'client_id' => $client->id,
             'planned_delivery_date' => now()->addDay()->toDateString(),
+            'subject' => 'Livraison de pieces hydrauliques',
             'items' => $items,
         ], $admin);
 
         $invoice = app(SaveDirectInvoiceAction::class)->execute([
             'client_id' => $client->id,
             'issue_date' => now()->toDateString(),
+            'subject' => 'Facturation de pieces hydrauliques',
             'items' => $items,
         ], $admin);
 
@@ -98,17 +101,20 @@ class AdminDocumentValidationBypassTest extends TestCase
         $proforma = app(SaveProformaAction::class)->execute([
             'client_id' => $client->id,
             'issue_date' => now()->toDateString(),
+            'subject' => 'Fourniture de pieces hydrauliques',
             'items' => $items,
         ], $user);
 
         $deliveryNote = app(SaveDeliveryNoteAction::class)->execute([
             'client_id' => $client->id,
+            'subject' => 'Livraison de pieces hydrauliques',
             'items' => $items,
         ], $user);
 
         $invoice = app(SaveDirectInvoiceAction::class)->execute([
             'client_id' => $client->id,
             'issue_date' => now()->toDateString(),
+            'subject' => 'Facturation de pieces hydrauliques',
             'items' => $items,
         ], $user);
 

@@ -83,7 +83,7 @@ class ProductCategoryController extends Controller
 
     public function edit(ProductCategory $productCategory): View
     {
-        Gate::authorize('update', ProductCategory::class);
+        Gate::authorize('update', $productCategory);
 
         return view('product-categories.edit', [
             'category' => $productCategory,

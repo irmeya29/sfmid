@@ -37,7 +37,15 @@ class SaveDeliveryNoteAction
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if (! $deliveryNote->status->isEditable()) {
+                if (
+                    ! $deliveryNote->status->isEditable()
+                    && ! (
+                        $user->hasPermission('sensitive.update_validated_document')
+                        && $deliveryNote->status !== DeliveryNoteStatus::Invoiced
+                        && $deliveryNote->status !== DeliveryNoteStatus::Cancelled
+                        && ! $deliveryNote->hasStockAlreadyMoved()
+                    )
+                ) {
                     throw new RuntimeException('Ce BL ne peut plus être modifié.');
                 }
 
@@ -46,6 +54,7 @@ class SaveDeliveryNoteAction
                     'client_delivery_site_id',
                     'status',
                     'planned_delivery_date',
+                    'subject',
                     'subtotal',
                     'discount_total',
                     'tax_total',
@@ -80,6 +89,7 @@ class SaveDeliveryNoteAction
                 'validated_by' => $newStatus === DeliveryNoteStatus::Validated ? $user->id : $deliveryNote->validated_by,
                 'validated_at' => $newStatus === DeliveryNoteStatus::Validated ? now() : $deliveryNote->validated_at,
                 'planned_delivery_date' => $data['planned_delivery_date'] ?? null,
+                'subject' => $data['subject'],
                 'subtotal' => $totals['subtotal'],
                 'discount_total' => $totals['discount_total'],
                 'tax_total' => 0,
@@ -130,6 +140,7 @@ class SaveDeliveryNoteAction
                     'client_delivery_site_id',
                     'status',
                     'planned_delivery_date',
+                    'subject',
                     'subtotal',
                     'discount_total',
                     'tax_total',

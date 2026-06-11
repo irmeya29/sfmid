@@ -50,6 +50,12 @@
         </div>
 
         <div class="lg:col-span-2">
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Objet <span class="text-red-600">*</span></label>
+            <input name="subject" value="{{ old('subject', $deliveryNote->subject) }}" required maxlength="255" placeholder="Ex : Livraison de flexibles hydrauliques" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+            @error('subject') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+        </div>
+
+        <div class="lg:col-span-2">
             <label class="mb-2 block text-sm font-semibold text-slate-700">Site de livraison</label>
             <select id="delivery-site-select" name="client_delivery_site_id"
                     data-selected="{{ old('client_delivery_site_id', $deliveryNote->client_delivery_site_id) }}"
