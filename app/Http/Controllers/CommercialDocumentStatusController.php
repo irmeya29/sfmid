@@ -10,6 +10,8 @@ use App\Models\DeliveryNote;
 use App\Models\Invoice;
 use App\Models\Proforma;
 use App\Services\Audit\ActivityLogger;
+use App\Services\Stock\DirectInvoiceStockMover;
+use App\Services\Stock\SuspenseStockCloser;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -85,7 +87,7 @@ class CommercialDocumentStatusController extends Controller
         return back()->with('success', 'Statut du BL modifie.');
     }
 
-    public function updateInvoice(Request $request, Invoice $invoice, ActivityLogger $activityLogger, ValidationHistoryLogger $validationHistoryLogger): RedirectResponse
+    public function updateInvoice(Request $request, Invoice $invoice, ActivityLogger $activityLogger, ValidationHistoryLogger $validationHistoryLogger, SuspenseStockCloser $suspenseStockCloser, DirectInvoiceStockMover $directInvoiceStockMover): RedirectResponse
     {
         $this->authorizeSensitiveStatusChange($request);
 
@@ -96,7 +98,7 @@ class CommercialDocumentStatusController extends Controller
 
         $status = InvoiceStatus::from($data['status']);
 
-        DB::transaction(function () use ($request, $invoice, $status, $data, $activityLogger, $validationHistoryLogger): void {
+        DB::transaction(function () use ($request, $invoice, $status, $data, $activityLogger, $validationHistoryLogger, $suspenseStockCloser, $directInvoiceStockMover): void {
             $fromStatus = $invoice->status;
 
             $invoice->forceFill([
@@ -111,6 +113,16 @@ class CommercialDocumentStatusController extends Controller
                 'cancelled_at' => $status === InvoiceStatus::Cancelled ? now() : $invoice->cancelled_at,
                 'cancellation_reason' => $status === InvoiceStatus::Cancelled ? $data['reason'] : $invoice->cancellation_reason,
             ])->save();
+
+            if (in_array($status, [InvoiceStatus::Validated, InvoiceStatus::Unpaid, InvoiceStatus::PartiallyPaid, InvoiceStatus::Paid], true)) {
+                $directInvoiceStockMover->moveForValidatedInvoice($invoice, $request->user());
+
+                $suspenseStockCloser->closeForInvoice(
+                    $invoice,
+                    $request->user(),
+                    "Facture {$invoice->number} validee par changement manuel de statut."
+                );
+            }
 
             $this->logStatusChange($validationHistoryLogger, $activityLogger, $invoice, 'invoices', $fromStatus->value, $status->value, $data['reason']);
         });

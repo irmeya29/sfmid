@@ -26,6 +26,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\StockSiteController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TreasuryController;
 use App\Http\Controllers\UserController;
@@ -252,6 +253,30 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('stock.movements')
         ->middleware('permission:stock.view');
 
+    Route::get('/stock/sites', [StockSiteController::class, 'index'])
+        ->name('stock-sites.index')
+        ->middleware('permission:stock.manage_sites|settings.update_stock_rules');
+
+    Route::post('/stock/sites', [StockSiteController::class, 'store'])
+        ->name('stock-sites.store')
+        ->middleware('permission:stock.manage_sites|settings.update_stock_rules');
+
+    Route::get('/stock/sites/{stockSite}/edit', [StockSiteController::class, 'edit'])
+        ->name('stock-sites.edit')
+        ->middleware('permission:stock.manage_sites|settings.update_stock_rules');
+
+    Route::put('/stock/sites/{stockSite}', [StockSiteController::class, 'update'])
+        ->name('stock-sites.update')
+        ->middleware('permission:stock.manage_sites|settings.update_stock_rules');
+
+    Route::post('/stock/sites/{stockSite}/toggle', [StockSiteController::class, 'toggle'])
+        ->name('stock-sites.toggle')
+        ->middleware('permission:stock.manage_sites|settings.update_stock_rules');
+
+    Route::post('/stock/sites/{stockSite}/default', [StockSiteController::class, 'makeDefault'])
+        ->name('stock-sites.default')
+        ->middleware('permission:stock.manage_sites|settings.update_stock_rules');
+
     Route::get('/stock/entries/create', [StockController::class, 'createEntry'])
         ->name('stock.entries.create')
         ->middleware('permission:stock.create_entry');
@@ -263,6 +288,14 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/stock/adjustments/create', [StockController::class, 'createAdjustment'])
         ->name('stock.adjustments.create')
         ->middleware('permission:stock.adjust');
+
+    Route::get('/stock/transfers/create', [StockController::class, 'createTransfer'])
+        ->name('stock.transfers.create')
+        ->middleware('permission:stock.create_exit');
+
+    Route::post('/stock/transfers', [StockController::class, 'storeTransfer'])
+        ->name('stock.transfers.store')
+        ->middleware('permission:stock.create_exit');
 
     Route::post('/stock/movements', [StockController::class, 'store'])
         ->name('stock.movements.store')

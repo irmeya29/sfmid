@@ -10,6 +10,7 @@ use App\Models\DeliveryNote;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
 use App\Services\Numbering\DocumentNumberGenerator;
+use App\Services\Stock\StockSiteInventory;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -20,6 +21,7 @@ class ConvertCustomerOrderToDeliveryNoteAction
         private readonly DocumentNumberGenerator $documentNumberGenerator,
         private readonly ActivityLogger $activityLogger,
         private readonly ValidationHistoryLogger $validationHistoryLogger,
+        private readonly StockSiteInventory $inventory,
     ) {}
 
     public function execute(CustomerOrder $customerOrder, User $user): DeliveryNote
@@ -43,6 +45,7 @@ class ConvertCustomerOrderToDeliveryNoteAction
                 'customer_order_id' => $customerOrder->id,
                 'client_id' => $customerOrder->client_id,
                 'client_delivery_site_id' => $customerOrder->client_delivery_site_id,
+                'stock_site_id' => $this->inventory->salesSite()->id,
                 'status' => $status,
                 'submitted_at' => $status === DeliveryNoteStatus::Validated ? now() : null,
                 'validated_by' => $status === DeliveryNoteStatus::Validated ? $user->id : null,

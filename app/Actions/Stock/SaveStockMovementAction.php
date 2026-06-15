@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
+use App\Services\Stock\StockSiteInventory;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -19,6 +20,7 @@ class SaveStockMovementAction
     public function __construct(
         private readonly ActivityLogger $activityLogger,
         private readonly ValidationHistoryLogger $validationHistoryLogger,
+        private readonly StockSiteInventory $inventory,
     ) {}
 
     /**
@@ -30,6 +32,7 @@ class SaveStockMovementAction
             $type = StockMovementType::from($data['type']);
             $quantity = (float) $data['quantity'];
             $stockColumn = $data['stock_column'] ?? 'physical_stock';
+            $stockSiteId = (int) ($data['stock_site_id'] ?? $this->inventory->defaultSite()->id);
             $reason = trim((string) ($data['reason'] ?? ''));
 
             if ($quantity <= 0) {
@@ -53,21 +56,41 @@ class SaveStockMovementAction
             $unitCost = isset($data['unit_cost']) ? (float) $data['unit_cost'] : (float) $product->purchase_price;
 
             if ($status === StockMovementStatus::PendingValidation) {
+                $stockRow = $this->inventory->stockRow($product, $stockSiteId, true);
+                $before = [
+                    'physical_before' => (float) $stockRow->physical_stock,
+                    'reserved_before' => (float) $stockRow->reserved_stock,
+                    'suspense_before' => (float) $stockRow->suspense_stock,
+                    'tool_before' => (float) $stockRow->tool_stock,
+                ];
+                $after = [
+                    'physical_after' => $before['physical_before'],
+                    'reserved_after' => $before['reserved_before'],
+                    'suspense_after' => $before['suspense_before'],
+                    'tool_after' => $before['tool_before'],
+                ];
+                $field = $this->afterField($stockColumn);
+                $current = (float) $stockRow->{$stockColumn};
+                $newValue = $direction === StockMovementDirection::In
+                    ? $current + $quantity
+                    : $current - $quantity;
+
+                if ($newValue < 0) {
+                    throw new RuntimeException('Stock insuffisant : le mouvement rendrait le stock negatif sur le site selectionne.');
+                }
+
+                $after[$field] = $newValue;
+
                 $movement = StockMovement::query()->create([
                     'product_id' => $product->id,
+                    'stock_site_id' => $stockSiteId,
                     'type' => $type,
                     'direction' => $direction,
                     'status' => $status,
                     'quantity' => $quantity,
                     'unit_cost' => $unitCost,
-                    'physical_before' => $product->physical_stock,
-                    'physical_after' => $product->physical_stock,
-                    'reserved_before' => $product->reserved_stock,
-                    'reserved_after' => $product->reserved_stock,
-                    'suspense_before' => $product->suspense_stock,
-                    'suspense_after' => $product->suspense_stock,
-                    'tool_before' => $product->tool_stock,
-                    'tool_after' => $product->tool_stock,
+                    ...$before,
+                    ...$after,
                     'reason' => $reason,
                     'created_by' => $user->id,
                 ]);
@@ -97,6 +120,7 @@ class SaveStockMovementAction
                 direction: $direction,
                 quantity: $quantity,
                 stockColumn: $stockColumn,
+                stockSiteId: $stockSiteId,
                 unitCost: $unitCost,
                 reason: $reason,
                 user: $user,
@@ -138,6 +162,7 @@ class SaveStockMovementAction
                 direction: $movement->direction,
                 quantity: (float) $movement->quantity,
                 stockColumn: $stockColumn,
+                stockSiteId: (int) ($movement->stock_site_id ?: $this->inventory->defaultSite()->id),
                 unitCost: (float) $movement->unit_cost,
                 reason: $movement->reason,
                 user: $user,
@@ -164,22 +189,86 @@ class SaveStockMovementAction
         });
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function transfer(array $data, User $user): StockMovement
+    {
+        return DB::transaction(function () use ($data, $user): StockMovement {
+            $product = Product::query()
+                ->whereKey($data['product_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $fromSiteId = (int) $data['from_stock_site_id'];
+            $toSiteId = (int) $data['to_stock_site_id'];
+
+            if ($fromSiteId === $toSiteId) {
+                throw new RuntimeException('Le site source et le site destination doivent etre differents.');
+            }
+
+            $quantity = (float) $data['quantity'];
+            $stockColumn = $data['stock_column'] ?? 'physical_stock';
+            $reason = trim((string) ($data['reason'] ?? 'Transfert interne'));
+            $unitCost = isset($data['unit_cost']) ? (float) $data['unit_cost'] : (float) $product->purchase_price;
+
+            $out = $this->applyMovement(
+                product: $product,
+                type: StockMovementType::TransferOut,
+                direction: StockMovementDirection::Out,
+                quantity: $quantity,
+                stockColumn: $stockColumn,
+                stockSiteId: $fromSiteId,
+                unitCost: $unitCost,
+                reason: $reason,
+                user: $user,
+            );
+
+            $in = $this->applyMovement(
+                product: $product->refresh(),
+                type: StockMovementType::TransferIn,
+                direction: StockMovementDirection::In,
+                quantity: $quantity,
+                stockColumn: $stockColumn,
+                stockSiteId: $toSiteId,
+                unitCost: $unitCost,
+                reason: $reason,
+                user: $user,
+            );
+
+            $out->forceFill(['destination_stock_site_id' => $toSiteId])->save();
+            $in->forceFill(['destination_stock_site_id' => $fromSiteId])->save();
+
+            $this->activityLogger->log(
+                action: 'validated',
+                module: 'stock',
+                description: 'Transfert interne de stock enregistre.',
+                subject: $out,
+                newValues: $out->only(['product_id', 'stock_site_id', 'destination_stock_site_id', 'quantity', 'status']),
+            );
+
+            return $out->refresh()->load(['product', 'stockSite', 'destinationStockSite']);
+        });
+    }
+
     private function applyMovement(
         Product $product,
         StockMovementType $type,
         StockMovementDirection $direction,
         float $quantity,
         string $stockColumn,
+        int $stockSiteId,
         float $unitCost,
         string $reason,
         User $user,
         ?StockMovement $movement = null,
     ): StockMovement {
+        $stockRow = $this->inventory->stockRow($product, $stockSiteId, true);
         $before = [
-            'physical_before' => (float) $product->physical_stock,
-            'reserved_before' => (float) $product->reserved_stock,
-            'suspense_before' => (float) $product->suspense_stock,
-            'tool_before' => (float) $product->tool_stock,
+            'physical_before' => (float) $stockRow->physical_stock,
+            'reserved_before' => (float) $stockRow->reserved_stock,
+            'suspense_before' => (float) $stockRow->suspense_stock,
+            'tool_before' => (float) $stockRow->tool_stock,
         ];
 
         $after = [
@@ -190,7 +279,7 @@ class SaveStockMovementAction
         ];
 
         $field = $this->afterField($stockColumn);
-        $current = (float) $product->{$stockColumn};
+        $current = (float) $stockRow->{$stockColumn};
         $newValue = $direction === StockMovementDirection::In
             ? $current + $quantity
             : $current - $quantity;
@@ -201,12 +290,14 @@ class SaveStockMovementAction
 
         $after[$field] = $newValue;
 
-        $product->forceFill([
+        $stockRow->forceFill([
             $stockColumn => $newValue,
         ])->save();
+        $this->inventory->syncProductTotals($product);
 
         $attributes = [
             'product_id' => $product->id,
+            'stock_site_id' => $stockSiteId,
             'type' => $type,
             'direction' => $direction,
             'status' => StockMovementStatus::Validated,

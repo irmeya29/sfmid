@@ -55,7 +55,6 @@
     .erp-card-name { color: #10203f; font-size: 13.5px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
     .erp-row { line-height: 1.45; margin-top: 2px; }
     .erp-label { color: #667085; display: inline-block; line-height: 1.45; min-width: 72px; vertical-align: baseline; }
-    .erp-value { display: inline-block; line-height: 1.45; position: relative; top: -1px; vertical-align: baseline; }
     .erp-subject { background: #f8fbfd; border-left: 3px solid #FA820A; color: #10203f; font-size: 11.5px; line-height: 1.45; margin: -8px 0 12px; padding: 9px 11px; page-break-inside: avoid; }
     .erp-subject strong { color: #2676B3; display: inline; font-size: 11.5px; line-height: 1.45; margin-right: 4px; text-transform: uppercase; vertical-align: baseline; }
     .erp-subject .erp-subject-text { display: inline; font-size: 11.5px; line-height: 1.45; vertical-align: baseline; }

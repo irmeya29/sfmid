@@ -23,6 +23,7 @@ class DeliveryNote extends Model
         'customer_order_id',
         'client_id',
         'client_delivery_site_id',
+        'stock_site_id',
         'status',
         'planned_delivery_date',
         'subject',
@@ -86,6 +87,11 @@ class DeliveryNote extends Model
     public function deliverySite(): BelongsTo
     {
         return $this->belongsTo(ClientDeliverySite::class, 'client_delivery_site_id');
+    }
+
+    public function stockSite(): BelongsTo
+    {
+        return $this->belongsTo(StockSite::class);
     }
 
     public function items(): HasMany

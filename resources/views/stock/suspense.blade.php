@@ -16,12 +16,21 @@
     </div>
 
     <form method="GET" class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <select name="client_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm" onchange="this.form.submit()">
-            <option value="">Tous les clients</option>
-            @foreach($clients as $client)
-                <option value="{{ $client->id }}" @selected($filters['client_id'] === $client->id)>{{ $client->code }} - {{ $client->name }}</option>
-            @endforeach
-        </select>
+        <div class="grid gap-3 lg:grid-cols-[1fr_260px_auto]">
+            <select name="client_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                <option value="">Tous les clients</option>
+                @foreach($clients as $client)
+                    <option value="{{ $client->id }}" @selected($filters['client_id'] === $client->id)>{{ $client->code }} - {{ $client->name }}</option>
+                @endforeach
+            </select>
+            <select name="stock_site_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                <option value="">Tous les sites</option>
+                @foreach($stockSites as $site)
+                    <option value="{{ $site->id }}" @selected((string) $filters['stock_site_id'] === (string) $site->id)>{{ $site->name }}</option>
+                @endforeach
+            </select>
+            <x-button type="submit" icon="filter">Filtrer</x-button>
+        </div>
     </form>
 
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -30,6 +39,7 @@
                 <tr>
                     <th class="px-5 py-4 text-left">Client</th>
                     <th class="px-5 py-4 text-left">Produit</th>
+                    <th class="px-5 py-4 text-left">Site</th>
                     <th class="px-5 py-4 text-left">BL</th>
                     <th class="px-5 py-4 text-left">Facture</th>
                     <th class="px-5 py-4 text-right">Quantité</th>
@@ -44,13 +54,14 @@
                             <p class="font-semibold">{{ $suspense->product?->name }}</p>
                             <p class="text-xs text-slate-500">{{ $suspense->product?->code }}</p>
                         </td>
+                        <td class="px-5 py-4">{{ $suspense->stockSite?->name ?: '-' }}</td>
                         <td class="px-5 py-4">{{ $suspense->deliveryNote?->number }}</td>
                         <td class="px-5 py-4">{{ $suspense->invoice?->number ?: 'Non facturé' }}</td>
                         <td class="px-5 py-4 text-right font-bold">{{ \App\Support\NumberFormatter::quantity($suspense->quantity) }}</td>
                         <td class="px-5 py-4 text-right font-bold">{{ \App\Support\NumberFormatter::quantity($suspense->remainingQuantity()) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-5 py-10 text-center text-slate-500">Aucun stock en suspens ouvert.</td></tr>
+                    <tr><td colspan="7" class="px-5 py-10 text-center text-slate-500">Aucun stock en suspens ouvert.</td></tr>
                 @endforelse
             </tbody>
         </table>

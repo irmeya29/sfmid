@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
 use App\Services\Numbering\DocumentNumberGenerator;
+use App\Services\Stock\SuspenseStockCloser;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class ConvertDeliveryNoteToInvoiceAction
         private readonly DocumentNumberGenerator $documentNumberGenerator,
         private readonly ActivityLogger $activityLogger,
         private readonly ValidationHistoryLogger $validationHistoryLogger,
+        private readonly SuspenseStockCloser $suspenseStockCloser,
     ) {}
 
     /**
@@ -144,6 +146,12 @@ class ConvertDeliveryNoteToInvoiceAction
             );
 
             if ($invoiceStatus === InvoiceStatus::Validated) {
+                $this->suspenseStockCloser->closeForInvoice(
+                    $invoice,
+                    $user,
+                    "Facture {$invoice->number} validee automatiquement."
+                );
+
                 $this->validationHistoryLogger->log(
                     document: $invoice,
                     action: ValidationAction::Validate,

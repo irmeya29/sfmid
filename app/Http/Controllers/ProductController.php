@@ -11,6 +11,7 @@ use App\Models\ClientProductPrice;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Services\Audit\ActivityLogger;
+use App\Services\Stock\StockSiteInventory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -219,7 +220,7 @@ class ProductController extends Controller
         }, 'template-import-produits.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
-    public function importCsv(Request $request, ActivityLogger $activityLogger): RedirectResponse
+    public function importCsv(Request $request, ActivityLogger $activityLogger, StockSiteInventory $inventory): RedirectResponse
     {
         Gate::authorize('import', Product::class);
 
@@ -268,6 +269,7 @@ class ProductController extends Controller
             ->all();
         $seenCodes = [];
         $pendingClientReferences = [];
+        $affectedCodes = [];
         $now = now();
         $chunk = [];
         $lineNumber = 1;
@@ -327,6 +329,7 @@ class ProductController extends Controller
                     ->whereKey($existingProductIdsByCode[$normalizedCode])
                     ->update($updatePayload);
 
+                $affectedCodes[] = $code;
                 $updated++;
 
                 if ($this->hasClientReferenceImportData($rowData)) {
@@ -341,6 +344,7 @@ class ProductController extends Controller
             }
 
             $chunk[] = $payload;
+            $affectedCodes[] = $code;
 
             if ($this->hasClientReferenceImportData($rowData)) {
                 $pendingClientReferences[] = [
@@ -359,6 +363,14 @@ class ProductController extends Controller
         if ($chunk !== []) {
             $created += Product::query()->insertOrIgnore($chunk);
         }
+
+        Product::query()
+            ->whereIn('code', array_values(array_unique($affectedCodes)))
+            ->chunkById(250, function ($products) use ($inventory): void {
+                foreach ($products as $product) {
+                    $this->syncProductDefaultSiteStock($product, $inventory);
+                }
+            });
 
         if ($pendingClientReferences !== []) {
             $productIdsByCode = Product::query()
@@ -394,11 +406,11 @@ class ProductController extends Controller
             ->with('import_errors', $errors);
     }
 
-    public function store(StoreProductRequest $request, ActivityLogger $activityLogger): RedirectResponse
+    public function store(StoreProductRequest $request, ActivityLogger $activityLogger, StockSiteInventory $inventory): RedirectResponse
     {
         Gate::authorize('create', Product::class);
 
-        $product = DB::transaction(function () use ($request, $activityLogger): Product {
+        $product = DB::transaction(function () use ($request, $activityLogger, $inventory): Product {
             $data = $request->validated();
 
             $product = Product::query()->create([
@@ -408,6 +420,8 @@ class ProductController extends Controller
                 'suspense_stock' => 0,
                 'created_by' => $request->user()->id,
             ]);
+
+            $this->syncProductDefaultSiteStock($product, $inventory);
 
             $activityLogger->log(
                 action: 'created',
@@ -463,7 +477,10 @@ class ProductController extends Controller
         $productId = $request->integer('product_id') ?: null;
 
         $products = Product::query()
-            ->with(['clientPrices' => fn ($query) => $query->when($clientId, fn ($query) => $query->where('client_id', $clientId))])
+            ->with([
+                'clientPrices' => fn ($query) => $query->when($clientId, fn ($query) => $query->where('client_id', $clientId)),
+                'stockSiteStocks',
+            ])
             ->active()
             ->commercial()
             ->when($productId, fn ($query) => $query->whereKey($productId))
@@ -496,6 +513,11 @@ class ProductController extends Controller
                 'discount_rate' => (float) ($reference?->discount_rate ?: 0),
                 'client_reference' => $reference?->client_reference,
                 'client_designation' => $reference?->client_designation,
+                'site_stocks' => $product->stockSiteStocks->mapWithKeys(fn ($stock) => [
+                    $stock->stock_site_id => [
+                        'physical_stock' => (float) $stock->physical_stock,
+                    ],
+                ]),
             ];
         })->values());
     }
@@ -512,11 +534,11 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(UpdateProductRequest $request, Product $product, ActivityLogger $activityLogger): RedirectResponse
+    public function update(UpdateProductRequest $request, Product $product, ActivityLogger $activityLogger, StockSiteInventory $inventory): RedirectResponse
     {
         Gate::authorize('update', $product);
 
-        DB::transaction(function () use ($request, $product, $activityLogger): void {
+        DB::transaction(function () use ($request, $product, $activityLogger, $inventory): void {
             $oldValues = $product->only([
                 'product_category_id',
                 'code',
@@ -534,8 +556,13 @@ class ProductController extends Controller
                 'stock_kind',
                 'status',
             ]);
+            $oldStockValues = $product->only(['physical_stock', 'reserved_stock', 'suspense_stock', 'tool_stock']);
 
             $product->update($request->validated());
+
+            if ($this->stockValuesChanged($oldStockValues, $product->fresh())) {
+                $this->syncProductDefaultSiteStock($product->refresh(), $inventory);
+            }
 
             $activityLogger->log(
                 action: 'updated',
@@ -921,5 +948,33 @@ class ProductController extends Controller
         if (count($errors) < 30) {
             $errors[] = $message;
         }
+    }
+
+    private function syncProductDefaultSiteStock(Product $product, StockSiteInventory $inventory): void
+    {
+        $row = $inventory->stockRow($product, $inventory->defaultSite());
+
+        $row->forceFill([
+            'physical_stock' => (float) $product->physical_stock,
+            'reserved_stock' => (float) $product->reserved_stock,
+            'suspense_stock' => (float) $product->suspense_stock,
+            'tool_stock' => (float) $product->tool_stock,
+        ])->save();
+
+        $inventory->syncProductTotals($product);
+    }
+
+    /**
+     * @param  array<string, mixed>  $oldValues
+     */
+    private function stockValuesChanged(array $oldValues, Product $product): bool
+    {
+        foreach (['physical_stock', 'reserved_stock', 'suspense_stock', 'tool_stock'] as $field) {
+            if (round((float) ($oldValues[$field] ?? 0), 3) !== round((float) $product->{$field}, 3)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

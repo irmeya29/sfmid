@@ -22,6 +22,10 @@ class Invoice extends Model
         'proforma_id',
         'customer_order_id',
         'client_id',
+        'direct_stock_enabled',
+        'stock_site_id',
+        'stock_moved_by',
+        'stock_moved_at',
         'status',
         'issue_date',
         'due_date',
@@ -53,6 +57,7 @@ class Invoice extends Model
     {
         return [
             'status' => InvoiceStatus::class,
+            'direct_stock_enabled' => 'boolean',
             'issue_date' => 'date',
             'due_date' => 'date',
             'subtotal' => 'decimal:2',
@@ -65,6 +70,7 @@ class Invoice extends Model
             'validated_at' => 'datetime',
             'rejected_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'stock_moved_at' => 'datetime',
         ];
     }
 
@@ -103,6 +109,11 @@ class Invoice extends Model
         return $this->hasMany(StockSuspense::class);
     }
 
+    public function stockMovements(): MorphMany
+    {
+        return $this->morphMany(StockMovement::class, 'source');
+    }
+
     public function validationHistories(): MorphMany
     {
         return $this->morphMany(ValidationHistory::class, 'document');
@@ -116,6 +127,16 @@ class Invoice extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function stockSite(): BelongsTo
+    {
+        return $this->belongsTo(StockSite::class);
+    }
+
+    public function stockMover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'stock_moved_by');
     }
 
     public function validator(): BelongsTo

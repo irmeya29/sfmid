@@ -4,13 +4,9 @@ namespace App\Actions\Payments;
 
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentStatus;
-use App\Enums\StockMovementDirection;
-use App\Enums\StockMovementStatus;
-use App\Enums\StockMovementType;
 use App\Enums\ValidationAction;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\Product;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
 use App\Services\Validation\ValidationHistoryLogger;
@@ -31,7 +27,7 @@ class ValidatePaymentAction
     public function execute(Payment $payment, User $user, ?string $comment = null): Payment
     {
         if (! $user->can('validate', $payment)) {
-            throw new AuthorizationException('Action non autorisée.');
+            throw new AuthorizationException('Action non autorisee.');
         }
 
         return DB::transaction(function () use ($payment, $user, $comment): Payment {
@@ -41,7 +37,7 @@ class ValidatePaymentAction
                 ->firstOrFail();
 
             if ($payment->status !== PaymentStatus::PendingValidation) {
-                throw new RuntimeException('Le paiement doit être en attente de validation.');
+                throw new RuntimeException('Le paiement doit etre en attente de validation.');
             }
 
             $invoice = Invoice::query()
@@ -59,11 +55,11 @@ class ValidatePaymentAction
             $balanceBefore = (float) $invoice->balance_due;
 
             if ($amount <= 0) {
-                throw new RuntimeException('Le montant du paiement doit être supérieur à zéro.');
+                throw new RuntimeException('Le montant du paiement doit etre superieur a zero.');
             }
 
             if ($amount > $balanceBefore) {
-                throw new RuntimeException('Le montant du paiement dépasse le reste à payer.');
+                throw new RuntimeException('Le montant du paiement depasse le reste a payer.');
             }
 
             $paidAfter = $paidBefore + $amount;
@@ -102,7 +98,7 @@ class ValidatePaymentAction
             $this->activityLogger->log(
                 action: 'validated',
                 module: 'payments',
-                description: "Paiement {$payment->number} validé.",
+                description: "Paiement {$payment->number} valide.",
                 subject: $payment,
                 oldValues: ['status' => $paymentFromStatus],
                 newValues: [
@@ -114,7 +110,7 @@ class ValidatePaymentAction
             $this->activityLogger->log(
                 action: 'payment_applied',
                 module: 'invoices',
-                description: "Paiement {$payment->number} appliqué à la facture {$invoice->number}.",
+                description: "Paiement {$payment->number} applique a la facture {$invoice->number}.",
                 subject: $invoice,
                 oldValues: [
                     'status' => $invoiceFromStatus,
@@ -128,88 +124,7 @@ class ValidatePaymentAction
                 ],
             );
 
-            if ($invoiceStatus === InvoiceStatus::Paid) {
-                $this->closeSuspenseStock($invoice, $user);
-            }
-
             return $payment->refresh()->load(['invoice.stockSuspenses']);
         });
-    }
-
-    private function closeSuspenseStock(Invoice $invoice, User $user): void
-    {
-        foreach ($invoice->stockSuspenses()->where('status', 'open')->get() as $suspense) {
-            $product = Product::query()
-                ->whereKey($suspense->product_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $quantityToClose = (float) $suspense->quantity - (float) $suspense->closed_quantity;
-
-            if ($quantityToClose <= 0) {
-                continue;
-            }
-
-            $physicalBefore = (float) $product->physical_stock;
-            $reservedBefore = (float) $product->reserved_stock;
-            $suspenseBefore = (float) $product->suspense_stock;
-            $toolBefore = (float) $product->tool_stock;
-
-            if ($suspenseBefore < $quantityToClose) {
-                throw new RuntimeException("Stock en suspens incohérent pour {$product->code} - {$product->name}.");
-            }
-
-            $suspenseAfter = $suspenseBefore - $quantityToClose;
-
-            $product->forceFill([
-                'suspense_stock' => $suspenseAfter,
-            ])->save();
-
-            $suspense->forceFill([
-                'closed_quantity' => $suspense->quantity,
-                'status' => 'closed',
-                'closed_at' => now(),
-                'closing_reason' => "Facture {$invoice->number} entièrement payée.",
-                'closed_by' => $user->id,
-            ])->save();
-
-            $suspense->deliveryNote->stockMovements()->create([
-                'product_id' => $product->id,
-                'type' => StockMovementType::SuspenseClose,
-                'direction' => StockMovementDirection::CloseSuspense,
-                'status' => StockMovementStatus::Validated,
-                'quantity' => $quantityToClose,
-                'unit_cost' => $product->purchase_price,
-                'physical_before' => $physicalBefore,
-                'physical_after' => $physicalBefore,
-                'reserved_before' => $reservedBefore,
-                'reserved_after' => $reservedBefore,
-                'suspense_before' => $suspenseBefore,
-                'suspense_after' => $suspenseAfter,
-                'tool_before' => $toolBefore,
-                'tool_after' => $toolBefore,
-                'reason' => "Clôture stock en suspens après paiement complet facture {$invoice->number}.",
-                'created_by' => $user->id,
-                'validated_by' => $user->id,
-                'validated_at' => now(),
-            ]);
-
-            $this->activityLogger->log(
-                action: 'closed_suspense_stock',
-                module: 'stock',
-                description: "Stock en suspens clôturé pour la facture {$invoice->number}.",
-                subject: $suspense,
-                oldValues: [
-                    'status' => 'open',
-                    'closed_quantity' => (float) $suspense->getOriginal('closed_quantity'),
-                    'product_suspense_stock' => $suspenseBefore,
-                ],
-                newValues: [
-                    'status' => 'closed',
-                    'closed_quantity' => (float) $suspense->quantity,
-                    'product_suspense_stock' => $suspenseAfter,
-                ],
-            );
-        }
     }
 }

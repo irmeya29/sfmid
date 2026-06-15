@@ -275,6 +275,7 @@ class RoleSeeder extends Seeder
                     'stock.adjust',
                     'stock.validate_movement',
                     'stock.close_suspense',
+                    'stock.manage_sites',
                     'stock.export',
                     'delivery_notes.view',
                     'delivery_notes.validate',

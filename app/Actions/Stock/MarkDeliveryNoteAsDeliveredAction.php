@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\StockSuspense;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
+use App\Services\Stock\StockSiteInventory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,7 @@ class MarkDeliveryNoteAsDeliveredAction
 {
     public function __construct(
         private readonly ActivityLogger $activityLogger,
+        private readonly StockSiteInventory $inventory,
     ) {}
 
     /**
@@ -62,6 +64,8 @@ class MarkDeliveryNoteAsDeliveredAction
                 throw new RuntimeException('Impossible de livrer un BL sans lignes.');
             }
 
+            $stockSiteId = (int) ($deliveryNote->stock_site_id ?: $this->inventory->salesSite()->id);
+
             foreach ($deliveryNote->items as $item) {
                 $quantity = (float) $item->delivered_quantity;
 
@@ -74,25 +78,29 @@ class MarkDeliveryNoteAsDeliveredAction
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                $physicalBefore = (float) $product->physical_stock;
-                $reservedBefore = (float) $product->reserved_stock;
-                $suspenseBefore = (float) $product->suspense_stock;
-                $toolBefore = (float) $product->tool_stock;
+                $stockRow = $this->inventory->stockRow($product, $stockSiteId, true);
+
+                $physicalBefore = (float) $stockRow->physical_stock;
+                $reservedBefore = (float) $stockRow->reserved_stock;
+                $suspenseBefore = (float) $stockRow->suspense_stock;
+                $toolBefore = (float) $stockRow->tool_stock;
 
                 if ($physicalBefore < $quantity) {
-                    throw new RuntimeException("Stock physique insuffisant pour {$product->code} - {$product->name}.");
+                    throw new RuntimeException("Stock physique insuffisant sur le site selectionne pour {$product->code} - {$product->name}.");
                 }
 
                 $physicalAfter = $physicalBefore - $quantity;
                 $suspenseAfter = $suspenseBefore + $quantity;
 
-                $product->forceFill([
+                $stockRow->forceFill([
                     'physical_stock' => $physicalAfter,
                     'suspense_stock' => $suspenseAfter,
                 ])->save();
+                $this->inventory->syncProductTotals($product);
 
                 $deliveryNote->stockMovements()->create([
                     'product_id' => $product->id,
+                    'stock_site_id' => $stockSiteId,
                     'type' => StockMovementType::SuspenseOpen,
                     'direction' => StockMovementDirection::Suspense,
                     'status' => StockMovementStatus::Validated,
@@ -115,6 +123,7 @@ class MarkDeliveryNoteAsDeliveredAction
                 StockSuspense::query()->create([
                     'client_id' => $deliveryNote->client_id,
                     'product_id' => $product->id,
+                    'stock_site_id' => $stockSiteId,
                     'delivery_note_id' => $deliveryNote->id,
                     'delivery_note_item_id' => $item->id,
                     'invoice_id' => null,

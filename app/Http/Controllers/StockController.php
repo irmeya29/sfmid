@@ -9,12 +9,15 @@ use App\Http\Requests\StoreStockMovementRequest;
 use App\Models\Client;
 use App\Models\CompanySetting;
 use App\Models\Product;
+use App\Models\StockSite;
 use App\Models\StockMovement;
 use App\Models\StockSuspense;
+use App\Services\Stock\StockSiteInventory;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -29,7 +32,8 @@ class StockController extends Controller
             'subtitle' => 'Quantités disponibles en magasin',
             'products' => $this->products($request)->paginate(15)->withQueryString(),
             'stockColumn' => 'physical_stock',
-            'filters' => ['search' => $request->string('search')->toString()],
+            'stockSites' => StockSite::query()->active()->orderBy('name')->get(),
+            'filters' => $this->stockProductFilters($request),
         ]);
     }
 
@@ -42,7 +46,8 @@ class StockController extends Controller
             'subtitle' => 'Quantités bloquées pour opérations non livrées',
             'products' => $this->products($request)->where('reserved_stock', '>', 0)->paginate(15)->withQueryString(),
             'stockColumn' => 'reserved_stock',
-            'filters' => ['search' => $request->string('search')->toString()],
+            'stockSites' => StockSite::query()->active()->orderBy('name')->get(),
+            'filters' => $this->stockProductFilters($request),
         ]);
     }
 
@@ -55,7 +60,8 @@ class StockController extends Controller
             'subtitle' => 'Matériel interne non vendable',
             'products' => $this->products($request)->where('tool_stock', '>', 0)->paginate(15)->withQueryString(),
             'stockColumn' => 'tool_stock',
-            'filters' => ['search' => $request->string('search')->toString()],
+            'stockSites' => StockSite::query()->active()->orderBy('name')->get(),
+            'filters' => $this->stockProductFilters($request),
         ]);
     }
 
@@ -64,9 +70,10 @@ class StockController extends Controller
         Gate::authorize('viewAny', StockMovement::class);
 
         $suspenses = StockSuspense::query()
-            ->with(['client', 'product', 'deliveryNote', 'invoice'])
+            ->with(['client', 'product', 'stockSite', 'deliveryNote', 'invoice'])
             ->open()
             ->when($request->filled('client_id'), fn ($query) => $query->where('client_id', $request->integer('client_id')))
+            ->when($request->filled('stock_site_id'), fn ($query) => $query->where('stock_site_id', $request->integer('stock_site_id')))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -74,7 +81,11 @@ class StockController extends Controller
         return view('stock.suspense', [
             'suspenses' => $suspenses,
             'clients' => Client::query()->orderBy('name')->get(),
-            'filters' => ['client_id' => $request->integer('client_id') ?: null],
+            'stockSites' => StockSite::query()->active()->orderBy('name')->get(),
+            'filters' => [
+                'client_id' => $request->integer('client_id') ?: null,
+                'stock_site_id' => $request->integer('stock_site_id') ?: null,
+            ],
         ]);
     }
 
@@ -83,9 +94,10 @@ class StockController extends Controller
         Gate::authorize('viewAny', StockMovement::class);
 
         $movements = StockMovement::query()
-            ->with(['product', 'creator', 'validator'])
+            ->with(['product', 'stockSite', 'destinationStockSite', 'creator', 'validator'])
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
             ->when($request->filled('type'), fn ($query) => $query->where('type', $request->string('type')->toString()))
+            ->when($request->filled('stock_site_id'), fn ($query) => $query->where('stock_site_id', $request->integer('stock_site_id')))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -94,9 +106,11 @@ class StockController extends Controller
             'movements' => $movements,
             'statuses' => StockMovementStatus::options(),
             'types' => StockMovementType::options(),
+            'stockSites' => StockSite::query()->active()->orderBy('name')->get(),
             'filters' => [
                 'status' => $request->string('status')->toString(),
                 'type' => $request->string('type')->toString(),
+                'stock_site_id' => $request->integer('stock_site_id') ?: null,
             ],
         ]);
     }
@@ -109,6 +123,8 @@ class StockController extends Controller
             'title' => 'Entrée stock fournisseur',
             'action' => route('stock.movements.store'),
             'products' => Product::query()->active()->orderBy('name')->get(),
+            'stockSites' => StockSite::query()->active()->where('can_store', true)->orderBy('name')->get(),
+            'defaultStockSiteId' => app(StockSiteInventory::class)->defaultSite()->id,
             'types' => [
                 StockMovementType::PurchaseEntry,
                 StockMovementType::CustomerReturn,
@@ -126,6 +142,8 @@ class StockController extends Controller
             'title' => 'Sortie stock manuelle',
             'action' => route('stock.movements.store'),
             'products' => Product::query()->active()->orderBy('name')->get(),
+            'stockSites' => StockSite::query()->active()->where('can_store', true)->orderBy('name')->get(),
+            'defaultStockSiteId' => app(StockSiteInventory::class)->defaultSite()->id,
             'types' => [
                 StockMovementType::InternalUse,
                 StockMovementType::LossOrDamage,
@@ -143,6 +161,8 @@ class StockController extends Controller
             'title' => 'Ajustement stock',
             'action' => route('stock.movements.store'),
             'products' => Product::query()->active()->orderBy('name')->get(),
+            'stockSites' => StockSite::query()->active()->where('can_store', true)->orderBy('name')->get(),
+            'defaultStockSiteId' => app(StockSiteInventory::class)->defaultSite()->id,
             'types' => [
                 StockMovementType::PositiveAdjustment,
                 StockMovementType::NegativeAdjustment,
@@ -150,6 +170,36 @@ class StockController extends Controller
             'defaultType' => StockMovementType::PositiveAdjustment->value,
             'defaultStockColumn' => 'physical_stock',
         ]);
+    }
+
+    public function createTransfer(): View
+    {
+        Gate::authorize('createExit', StockMovement::class);
+
+        return view('stock.transfer', [
+            'products' => Product::query()->active()->orderBy('name')->get(),
+            'stockSites' => StockSite::query()->active()->where('can_store', true)->orderBy('name')->get(),
+            'defaultStockSiteId' => app(StockSiteInventory::class)->defaultSite()->id,
+        ]);
+    }
+
+    public function storeTransfer(Request $request, SaveStockMovementAction $action): RedirectResponse
+    {
+        Gate::authorize('createExit', StockMovement::class);
+
+        $data = $request->validate([
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'from_stock_site_id' => ['required', 'integer', Rule::exists('stock_sites', 'id')->where('is_active', true)->where('can_store', true)],
+            'to_stock_site_id' => ['required', 'integer', 'different:from_stock_site_id', Rule::exists('stock_sites', 'id')->where('is_active', true)->where('can_store', true)],
+            'stock_column' => ['required', Rule::in(['physical_stock', 'tool_stock'])],
+            'quantity' => ['required', 'numeric', 'min:0.001'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $action->transfer($data, $request->user());
+
+        return redirect()->route('stock.movements')->with('success', 'Transfert stock enregistre.');
     }
 
     public function store(StoreStockMovementRequest $request, SaveStockMovementAction $action): RedirectResponse
@@ -213,9 +263,25 @@ class StockController extends Controller
 
     private function products(Request $request)
     {
+        $stockSiteId = $request->integer('stock_site_id') ?: null;
+
         return Product::query()
-            ->with('category')
+            ->with([
+                'category',
+                'stockSiteStocks' => fn ($query) => $query->when($stockSiteId, fn ($query) => $query->where('stock_site_id', $stockSiteId)),
+            ])
             ->search($request->string('search')->toString())
             ->orderBy('name');
+    }
+
+    /**
+     * @return array{search: string, stock_site_id: int|null}
+     */
+    private function stockProductFilters(Request $request): array
+    {
+        return [
+            'search' => $request->string('search')->toString(),
+            'stock_site_id' => $request->integer('stock_site_id') ?: null,
+        ];
     }
 }

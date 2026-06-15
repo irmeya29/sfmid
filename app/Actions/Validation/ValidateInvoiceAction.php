@@ -7,6 +7,8 @@ use App\Enums\ValidationAction;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
+use App\Services\Stock\DirectInvoiceStockMover;
+use App\Services\Stock\SuspenseStockCloser;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +18,8 @@ class ValidateInvoiceAction
     public function __construct(
         private readonly ActivityLogger $activityLogger,
         private readonly ValidationHistoryLogger $validationHistoryLogger,
+        private readonly SuspenseStockCloser $suspenseStockCloser,
+        private readonly DirectInvoiceStockMover $directInvoiceStockMover,
     ) {}
 
     public function execute(Invoice $invoice, User $user, ?string $comment = null): Invoice
@@ -40,6 +44,14 @@ class ValidateInvoiceAction
                 'rejected_at' => null,
                 'rejection_reason' => null,
             ])->save();
+
+            $this->directInvoiceStockMover->moveForValidatedInvoice($invoice, $user);
+
+            $this->suspenseStockCloser->closeForInvoice(
+                $invoice,
+                $user,
+                "Facture {$invoice->number} validee."
+            );
 
             $this->validationHistoryLogger->log(
                 document: $invoice,

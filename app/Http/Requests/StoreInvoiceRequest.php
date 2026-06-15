@@ -30,6 +30,13 @@ class StoreInvoiceRequest extends FormRequest
             'currency' => ['nullable', 'string', 'max:10'],
             'payment_terms' => ['nullable', 'string', 'max:2000'],
             'delivery_delay' => ['nullable', 'string', 'max:255'],
+            'direct_stock_enabled' => ['nullable', 'boolean'],
+            'stock_site_id' => [
+                Rule::requiredIf(fn (): bool => $this->input('source_type') === 'direct' && $this->boolean('direct_stock_enabled')),
+                'nullable',
+                'integer',
+                Rule::exists('stock_sites', 'id')->where('is_active', true)->where('can_sell', true),
+            ],
             'apply_tax' => ['nullable', 'boolean'],
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'notes' => ['nullable', 'string', 'max:2000'],

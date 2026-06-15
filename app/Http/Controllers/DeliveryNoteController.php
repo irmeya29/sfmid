@@ -10,6 +10,7 @@ use App\Models\Client;
 use App\Models\CompanySetting;
 use App\Models\DeliveryNote;
 use App\Models\Product;
+use App\Models\StockSite;
 use App\Services\Audit\ActivityLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -59,7 +60,8 @@ class DeliveryNoteController extends Controller
                 'planned_delivery_date' => now()->addDay(),
             ]),
             'clients' => Client::query()->with('deliverySites')->active()->orderBy('name')->get(),
-            'products' => Product::query()->active()->commercial()->orderBy('name')->get(),
+            'products' => Product::query()->with('stockSiteStocks')->active()->commercial()->orderBy('name')->get(),
+            'stockSites' => StockSite::query()->active()->sellable()->orderBy('name')->get(),
             'lineItems' => [
                 [
                     'product_id' => '',
@@ -99,6 +101,7 @@ class DeliveryNoteController extends Controller
             'rejector',
             'deliverer',
             'stockMover',
+            'stockSite',
             'proforma',
             'customerOrder',
             'invoice',
@@ -118,7 +121,8 @@ class DeliveryNoteController extends Controller
         return view('delivery-notes.edit', [
             'deliveryNote' => $deliveryNote,
             'clients' => Client::query()->with('deliverySites')->active()->orderBy('name')->get(),
-            'products' => Product::query()->active()->commercial()->orderBy('name')->get(),
+            'products' => Product::query()->with('stockSiteStocks')->active()->commercial()->orderBy('name')->get(),
+            'stockSites' => StockSite::query()->active()->sellable()->orderBy('name')->get(),
             'lineItems' => $deliveryNote->items->map(fn ($item): array => [
                 'product_id' => $item->product_id,
                 'quantity' => (float) $item->quantity,
@@ -155,6 +159,7 @@ class DeliveryNoteController extends Controller
             'creator',
             'validator',
             'deliverer',
+            'stockSite',
             'proforma',
             'customerOrder',
         ]);

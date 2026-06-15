@@ -97,6 +97,10 @@
                         @endif
                     </p>
                 </div>
+                <div class="sm:col-span-2">
+                    <p class="text-xs font-semibold uppercase text-slate-500">Site source stock</p>
+                    <p class="mt-1 font-semibold text-slate-950">{{ $deliveryNote->stockSite?->name ?: 'Site principal' }}</p>
+                </div>
             </div>
         </x-card>
 

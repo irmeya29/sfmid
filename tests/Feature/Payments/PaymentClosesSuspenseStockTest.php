@@ -24,7 +24,7 @@ class PaymentClosesSuspenseStockTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_full_validated_payment_marks_invoice_paid_and_closes_suspense_stock(): void
+    public function test_full_validated_payment_marks_invoice_paid_without_closing_suspense_stock(): void
     {
         $actor = $this->userWithPermissions([
             'payments.submit',
@@ -103,16 +103,16 @@ class PaymentClosesSuspenseStockTest extends TestCase
         $this->assertSame(0.0, (float) $invoice->balance_due);
 
         $this->assertSame(7.0, (float) $product->physical_stock);
-        $this->assertSame(0.0, (float) $product->suspense_stock);
+        $this->assertSame(3.0, (float) $product->suspense_stock);
 
         $suspense = StockSuspense::query()->firstOrFail();
 
-        $this->assertSame('closed', $suspense->status);
-        $this->assertSame(3.0, (float) $suspense->closed_quantity);
-        $this->assertNotNull($suspense->closed_at);
-        $this->assertSame($actor->id, $suspense->closed_by);
+        $this->assertSame('open', $suspense->status);
+        $this->assertSame(0.0, (float) $suspense->closed_quantity);
+        $this->assertNull($suspense->closed_at);
+        $this->assertNull($suspense->closed_by);
 
-        $this->assertDatabaseCount('stock_movements', 1);
+        $this->assertDatabaseCount('stock_movements', 0);
     }
 
     public function test_partial_payment_marks_invoice_partially_paid_without_closing_suspense_stock(): void

@@ -13,6 +13,8 @@ use App\Models\CompanySetting;
 use App\Models\DeliveryNote;
 use App\Models\Invoice;
 use App\Models\Proforma;
+use App\Models\Product;
+use App\Models\StockSite;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -75,6 +77,8 @@ class InvoiceController extends Controller
             'selectedDeliveryNoteId' => $request->integer('delivery_note_id') ?: null,
             'selectedProformaId' => $request->integer('proforma_id') ?: null,
             'clients' => Client::query()->active()->orderBy('name')->get(),
+            'stockSites' => StockSite::query()->active()->sellable()->orderBy('name')->get(),
+            'products' => Product::query()->with('stockSiteStocks')->active()->commercial()->orderBy('name')->get(),
             'company' => CompanySetting::query()->pluck('value', 'key')->all(),
             'lineItems' => [
                 [
@@ -164,6 +168,9 @@ class InvoiceController extends Controller
             'creator',
             'validator',
             'rejector',
+            'stockSite',
+            'stockMover',
+            'stockMovements.stockSite',
             'stockSuspenses.product',
         ]);
 

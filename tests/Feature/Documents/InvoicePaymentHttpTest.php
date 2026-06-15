@@ -12,8 +12,10 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentMode;
 use App\Models\Permission;
+use App\Models\ProductStockSite;
 use App\Models\Product;
 use App\Models\Role;
+use App\Models\StockSite;
 use App\Models\StockSuspense;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,6 +42,19 @@ class InvoicePaymentHttpTest extends TestCase
 
         [$deliveryNote, $product] = $this->deliveredDeliveryNote();
 
+        StockSuspense::query()->create([
+            'client_id' => $deliveryNote->client_id,
+            'product_id' => $product->id,
+            'delivery_note_id' => $deliveryNote->id,
+            'delivery_note_item_id' => $deliveryNote->items()->firstOrFail()->id,
+            'invoice_id' => null,
+            'quantity' => 3,
+            'closed_quantity' => 0,
+            'status' => 'open',
+            'delivered_at' => now(),
+            'created_by' => $creator->id,
+        ]);
+
         $this->actingAs($creator)->get(route('invoices.create', ['delivery_note_id' => $deliveryNote->id]))
             ->assertOk()
             ->assertSee($deliveryNote->number);
@@ -63,6 +78,8 @@ class InvoicePaymentHttpTest extends TestCase
         $this->actingAs($validator)->post(route('invoices.validate', $invoice))
             ->assertRedirect(route('invoices.show', $invoice));
         $this->assertSame(InvoiceStatus::Unpaid, $invoice->refresh()->status);
+        $this->assertSame(0.0, (float) $product->refresh()->suspense_stock);
+        $this->assertSame('closed', StockSuspense::query()->firstOrFail()->status);
 
         $this->actingAs($validator)->get(route('invoices.pdf', $invoice))
             ->assertOk()
@@ -144,6 +161,65 @@ class InvoicePaymentHttpTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
+    public function test_direct_invoice_can_move_stock_on_validation_when_enabled(): void
+    {
+        $this->sequence('invoice', 'FAC');
+
+        $creator = $this->userWithPermissions(['invoices.view', 'invoices.create', 'invoices.submit', 'products.view']);
+        $validator = $this->userWithPermissions(['invoices.validate']);
+
+        $salesSite = StockSite::query()->where('can_sell', true)->firstOrFail();
+        $client = \App\Models\Client::factory()->create();
+        $product = Product::factory()->create([
+            'physical_stock' => 10,
+            'suspense_stock' => 0,
+            'sale_price' => 25000,
+        ]);
+
+        ProductStockSite::query()->create([
+            'product_id' => $product->id,
+            'stock_site_id' => $salesSite->id,
+            'physical_stock' => 10,
+            'reserved_stock' => 0,
+            'suspense_stock' => 0,
+            'tool_stock' => 0,
+        ]);
+
+        $this->actingAs($creator)->post(route('invoices.store'), [
+            'source_type' => 'direct',
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'subject' => 'Vente comptoir',
+            'direct_stock_enabled' => '1',
+            'stock_site_id' => $salesSite->id,
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 2,
+                    'unit_price' => 25000,
+                    'discount_amount' => 0,
+                ],
+            ],
+        ])->assertRedirect();
+
+        $invoice = Invoice::query()->firstOrFail();
+
+        $this->assertTrue($invoice->direct_stock_enabled);
+        $this->assertNull($invoice->stock_moved_at);
+        $this->assertSame(10.0, (float) $product->refresh()->physical_stock);
+
+        $this->actingAs($creator)->post(route('invoices.submit', $invoice))
+            ->assertRedirect(route('invoices.show', $invoice));
+
+        $this->actingAs($validator)->post(route('invoices.validate', $invoice))
+            ->assertRedirect(route('invoices.show', $invoice));
+
+        $this->assertSame(8.0, (float) $product->refresh()->physical_stock);
+        $this->assertNotNull($invoice->refresh()->stock_moved_at);
+        $this->assertDatabaseCount('stock_movements', 1);
+    }
+
     public function test_payment_partial_total_validation_receipt_and_cash_journal(): void
     {
         $this->sequence('payment', 'REC');
@@ -216,7 +292,7 @@ class InvoicePaymentHttpTest extends TestCase
         $this->actingAs($validator)->post(route('payments.validate', $secondPayment))->assertRedirect(route('payments.show', $secondPayment));
         $this->assertSame(InvoiceStatus::Paid, $invoice->refresh()->status);
         $this->assertSame(0.0, (float) $invoice->balance_due);
-        $this->assertSame(0.0, (float) $product->refresh()->suspense_stock);
+        $this->assertSame(3.0, (float) $product->refresh()->suspense_stock);
 
         $this->actingAs($validator)->get(route('payments.receipt', $secondPayment))
             ->assertOk()

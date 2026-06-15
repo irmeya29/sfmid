@@ -14,6 +14,7 @@ class StockSuspense extends Model
     protected $fillable = [
         'client_id',
         'product_id',
+        'stock_site_id',
         'delivery_note_id',
         'delivery_note_item_id',
         'invoice_id',
@@ -45,6 +46,11 @@ class StockSuspense extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function stockSite(): BelongsTo
+    {
+        return $this->belongsTo(StockSite::class);
     }
 
     public function deliveryNote(): BelongsTo

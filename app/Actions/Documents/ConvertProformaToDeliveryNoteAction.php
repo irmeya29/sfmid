@@ -10,6 +10,7 @@ use App\Models\Proforma;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
 use App\Services\Numbering\DocumentNumberGenerator;
+use App\Services\Stock\StockSiteInventory;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class ConvertProformaToDeliveryNoteAction
         private readonly DocumentNumberGenerator $documentNumberGenerator,
         private readonly ActivityLogger $activityLogger,
         private readonly ValidationHistoryLogger $validationHistoryLogger,
+        private readonly StockSiteInventory $inventory,
     ) {}
 
     /**
@@ -60,6 +62,7 @@ class ConvertProformaToDeliveryNoteAction
                 'proforma_id' => $proforma->id,
                 'client_id' => $proforma->client_id,
                 'client_delivery_site_id' => $proforma->client_delivery_site_id,
+                'stock_site_id' => $this->inventory->salesSite()->id,
                 'status' => $deliveryNoteStatus,
                 'submitted_at' => $deliveryNoteStatus === DeliveryNoteStatus::Validated ? now() : null,
                 'validated_by' => $deliveryNoteStatus === DeliveryNoteStatus::Validated ? $user->id : null,

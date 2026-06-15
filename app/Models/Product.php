@@ -74,6 +74,11 @@ class Product extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function stockSiteStocks(): HasMany
+    {
+        return $this->hasMany(ProductStockSite::class);
+    }
+
     public function proformaItems(): HasMany
     {
         return $this->hasMany(ProformaItem::class);

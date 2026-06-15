@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
 use App\Services\Numbering\DocumentNumberGenerator;
+use App\Services\Stock\DirectInvoiceStockMover;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -20,6 +21,7 @@ class SaveDirectInvoiceAction
         private readonly DocumentNumberGenerator $documentNumberGenerator,
         private readonly ActivityLogger $activityLogger,
         private readonly ValidationHistoryLogger $validationHistoryLogger,
+        private readonly DirectInvoiceStockMover $directInvoiceStockMover,
     ) {}
 
     /**
@@ -37,6 +39,8 @@ class SaveDirectInvoiceAction
                 'number' => $this->documentNumberGenerator->generate('invoice'),
                 'delivery_note_id' => null,
                 'client_id' => $data['client_id'],
+                'direct_stock_enabled' => (bool) ($data['direct_stock_enabled'] ?? false),
+                'stock_site_id' => ($data['direct_stock_enabled'] ?? false) ? $data['stock_site_id'] : null,
                 'status' => $status,
                 'submitted_at' => $status === InvoiceStatus::Validated ? now() : null,
                 'validated_by' => $status === InvoiceStatus::Validated ? $user->id : null,
@@ -63,6 +67,8 @@ class SaveDirectInvoiceAction
             }
 
             if ($status === InvoiceStatus::Validated) {
+                $this->directInvoiceStockMover->moveForValidatedInvoice($invoice, $user);
+
                 $this->validationHistoryLogger->log(
                     document: $invoice,
                     action: ValidationAction::Validate,

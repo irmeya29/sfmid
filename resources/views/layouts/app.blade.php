@@ -142,10 +142,11 @@
             'label' => 'Stock & inventaire',
             'caption' => 'Produits, mouvements, alertes',
             'icon' => 'boxes',
-            'routes' => ['stock.*', 'products.*', 'product-categories.*'],
+            'routes' => ['stock.*', 'stock-sites.*', 'products.*', 'product-categories.*'],
             'items' => [
                 ['label' => 'Stock physique', 'route' => 'stock.physical', 'icon' => 'warehouse', 'show' => $can('stock.view'), 'active' => ['stock.physical', 'stock.reserved', 'stock.suspense', 'stock.tool']],
-                ['label' => 'Mouvements', 'route' => 'stock.movements', 'icon' => 'arrow-left-right', 'show' => $can('stock.view'), 'active' => ['stock.movements', 'stock.entries.*', 'stock.exits.*', 'stock.adjustments.*']],
+                ['label' => 'Mouvements', 'route' => 'stock.movements', 'icon' => 'arrow-left-right', 'show' => $can('stock.view'), 'active' => ['stock.movements', 'stock.entries.*', 'stock.exits.*', 'stock.adjustments.*', 'stock.transfers.*']],
+                ['label' => 'Sites', 'route' => 'stock-sites.index', 'icon' => 'map-pinned', 'show' => $canAny(['stock.manage_sites', 'settings.update_stock_rules']), 'active' => ['stock-sites.*']],
                 ['label' => 'Rapports stock', 'route' => 'stock.reports.low-stock', 'icon' => 'clipboard-list', 'show' => $can('stock.view'), 'active' => ['stock.reports.*']],
                 ['label' => 'Produits', 'route' => 'products.index', 'icon' => 'package', 'show' => $can('products.view'), 'active' => ['products.*']],
                 ['label' => 'Catégories produits', 'route' => 'product-categories.index', 'icon' => 'tags', 'show' => $can('products.view'), 'active' => ['product-categories.*']],

@@ -102,6 +102,7 @@ class PermissionSeeder extends Seeder
                 'validate_movement',
                 'cancel_movement',
                 'close_suspense',
+                'manage_sites',
                 'export',
             ],
 

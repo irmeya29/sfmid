@@ -20,6 +20,17 @@
                 </select>
                 @error('product_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
+            <div class="sm:col-span-2">
+                <label class="mb-2 block text-sm font-semibold text-slate-700">Site de stock</label>
+                <select name="stock_site_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                    @foreach($stockSites as $site)
+                        <option value="{{ $site->id }}" @selected((string) old('stock_site_id', $defaultStockSiteId) === (string) $site->id)>
+                            {{ $site->name }} @if($site->can_sell) - vente possible @endif
+                        </option>
+                    @endforeach
+                </select>
+                @error('stock_site_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+            </div>
             <div>
                 <label class="mb-2 block text-sm font-semibold text-slate-700">Type</label>
                 <select name="type" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">

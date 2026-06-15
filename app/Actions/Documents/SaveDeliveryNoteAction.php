@@ -52,6 +52,7 @@ class SaveDeliveryNoteAction
                 $oldValues = $deliveryNote->only([
                     'client_id',
                     'client_delivery_site_id',
+                    'stock_site_id',
                     'status',
                     'planned_delivery_date',
                     'subject',
@@ -84,6 +85,7 @@ class SaveDeliveryNoteAction
             $deliveryNote->fill([
                 'client_id' => $data['client_id'],
                 'client_delivery_site_id' => $data['client_delivery_site_id'] ?? null,
+                'stock_site_id' => $data['stock_site_id'],
                 'status' => $newStatus,
                 'submitted_at' => $newStatus === DeliveryNoteStatus::Validated ? now() : $deliveryNote->submitted_at,
                 'validated_by' => $newStatus === DeliveryNoteStatus::Validated ? $user->id : $deliveryNote->validated_by,
@@ -138,6 +140,7 @@ class SaveDeliveryNoteAction
                 newValues: $deliveryNote->fresh()->only([
                     'client_id',
                     'client_delivery_site_id',
+                    'stock_site_id',
                     'status',
                     'planned_delivery_date',
                     'subject',

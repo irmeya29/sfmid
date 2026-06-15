@@ -7,6 +7,12 @@
         'sale_price' => (float) $product->sale_price,
         'physical_stock' => (float) $product->physical_stock,
         'suspense_stock' => (float) $product->suspense_stock,
+        'site_stocks' => $product->stockSiteStocks->mapWithKeys(fn ($stock) => [
+            $stock->stock_site_id => [
+                'physical_stock' => (float) $stock->physical_stock,
+                'suspense_stock' => (float) $stock->suspense_stock,
+            ],
+        ]),
     ])->values();
 
     $clientsPayload = $clients->map(fn ($client) => [
@@ -70,6 +76,18 @@
             <label class="mb-2 block text-sm font-semibold text-slate-700">Notes</label>
             <textarea name="notes" rows="3" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">{{ old('notes', $deliveryNote->notes) }}</textarea>
             @error('notes') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+        </div>
+
+        <div class="lg:col-span-2">
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Site de vente / source stock <span class="text-red-600">*</span></label>
+            <select id="stock-site-select" name="stock_site_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                @foreach($stockSites as $site)
+                    <option value="{{ $site->id }}" @selected((string) old('stock_site_id', $deliveryNote->stock_site_id ?: optional($stockSites->firstWhere('is_default', true))->id ?: optional($stockSites->first())->id) === (string) $site->id)>
+                        {{ $site->name }} @if($site->can_store && $site->can_sell) - stock et vente @endif
+                    </option>
+                @endforeach
+            </select>
+            @error('stock_site_id') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
     </div>
 
@@ -158,6 +176,7 @@
     const clientSelect = document.getElementById('client-select');
     const deliverySiteSelect = document.getElementById('delivery-site-select');
     const deliverySiteHelp = document.getElementById('delivery-site-help');
+    const stockSiteSelect = document.getElementById('stock-site-select');
 
     function money(value) {
         return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0) + ' FCFA';
@@ -170,6 +189,11 @@
     }
     function findClient(id) {
         return clients.find(client => String(client.id) === String(id));
+    }
+    function productPhysicalStock(product) {
+        if (!product || !stockSiteSelect) return 0;
+        const siteStock = product.site_stocks && product.site_stocks[String(stockSiteSelect.value)];
+        return siteStock ? Number(siteStock.physical_stock || 0) : 0;
     }
     function refreshDeliverySites(fillDefault = false) {
         const selectedClient = findClient(clientSelect.value);
@@ -209,7 +233,7 @@
         const stockWarning = row.querySelector('.stock-warning');
 
         if (product) {
-            row.querySelector('.physical-stock').textContent = quantity(product.physical_stock);
+            row.querySelector('.physical-stock').textContent = quantity(productPhysicalStock(product));
             if (!priceInput.value || Number(priceInput.value) <= 0) {
                 priceInput.value = product.sale_price;
             }
@@ -225,8 +249,8 @@
         const price = Number(priceInput.value || 0);
         const discount = Number(discountInput.value || 0);
 
-        if (product && deliveredQty > Number(product.physical_stock || 0)) {
-            stockWarning.textContent = 'Quantité livrée supérieure au stock physique.';
+        if (product && deliveredQty > productPhysicalStock(product)) {
+            stockWarning.textContent = 'Quantité livrée supérieure au stock physique du site.';
             stockWarning.classList.remove('hidden');
         } else {
             stockWarning.textContent = '';
@@ -282,6 +306,7 @@
     addLineButton.addEventListener('click', addLine);
     clientSelect.addEventListener('change', () => refreshDeliverySites(true));
     deliverySiteSelect.addEventListener('change', () => deliverySiteSelect.dataset.selected = deliverySiteSelect.value);
+    stockSiteSelect.addEventListener('change', () => body.querySelectorAll('.item-row').forEach(refreshRow));
     refreshDeliverySites(false);
     body.querySelectorAll('.item-row').forEach(bindRow);
     reindexRows();

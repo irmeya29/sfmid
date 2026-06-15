@@ -13,6 +13,8 @@
     $taxRate = old('tax_rate', $lineTaxRate ?? ($defaultTaxRate ?: 18));
     $applyTax = (bool) old('apply_tax', (float) $taxRate > 0);
     $oldSourceType = old('source_type', $selectedDeliveryNoteId ? 'delivery_note' : ($selectedProformaId ? 'proforma' : 'direct'));
+    $directStockEnabled = (bool) old('direct_stock_enabled', false);
+    $selectedStockSiteId = old('stock_site_id', optional($stockSites->first())->id);
 @endphp
 
 @extends('layouts.app')
@@ -121,6 +123,29 @@
                     <label class="mb-2 block text-sm font-semibold text-slate-700">Delai de livraison</label>
                     <input name="delivery_delay" value="{{ old('delivery_delay') }}" placeholder="Ex : immediat" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
                 </div>
+                <div class="lg:col-span-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-950">Vente directe avec sortie stock</h4>
+                            <p class="mt-1 text-sm text-slate-600">A activer pour les ventes comptoir ou clients particuliers sans BL.</p>
+                        </div>
+                        <label class="inline-flex cursor-pointer items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
+                            <input type="hidden" name="direct_stock_enabled" value="0">
+                            <input id="direct-stock-enabled" type="checkbox" name="direct_stock_enabled" value="1" class="h-4 w-4 rounded border-slate-300" @checked($directStockEnabled)>
+                            <span class="text-sm font-bold text-slate-800">Sortir du stock a la validation</span>
+                        </label>
+                    </div>
+                    <div id="direct-stock-site-wrap" class="mt-4 {{ $directStockEnabled ? '' : 'hidden' }}">
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Site de vente</label>
+                        <select id="stock-site-select" name="stock_site_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                            <option value="">Selectionner un site de vente</option>
+                            @foreach($stockSites as $site)
+                                <option value="{{ $site->id }}" @selected((string) $selectedStockSiteId === (string) $site->id)>{{ $site->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('stock_site_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                </div>
                 <div class="lg:col-span-2">
                     <label class="mb-2 block text-sm font-semibold text-slate-700">Conditions de reglement</label>
                     <textarea id="payment-terms" name="payment_terms" rows="2" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">{{ old('payment_terms') }}</textarea>
@@ -159,6 +184,7 @@
                             <tr>
                                 <th class="px-4 py-3 text-left">Article</th>
                                 <th class="px-4 py-3 text-left">Reference</th>
+                                <th class="px-4 py-3 text-right">Stock site</th>
                                 <th class="px-4 py-3 text-right">Qte</th>
                                 <th class="px-4 py-3 text-right">Prix</th>
                                 <th class="px-4 py-3 text-right">Remise</th>
@@ -179,6 +205,10 @@
                                     </td>
                                     <td class="px-3 py-3">
                                         <p class="client-ref text-sm font-semibold text-slate-800">-</p>
+                                    </td>
+                                    <td class="px-3 py-3 text-right">
+                                        <p class="site-stock font-bold text-slate-700">-</p>
+                                        <p class="stock-warning hidden text-xs font-semibold text-amber-700"></p>
                                     </td>
                                     <td class="px-3 py-3"><input type="number" step="any" min="0.001" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" class="quantity-input w-20 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
                                     <td class="px-3 py-3"><input type="number" step="0.01" min="0" name="items[{{ $index }}][unit_price]" value="{{ $moneyInput($item['unit_price'] ?? 0) }}" class="price-input w-28 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
@@ -220,6 +250,9 @@
         const applyTax = document.getElementById('apply-tax');
         const taxRateInput = document.getElementById('global-tax-rate');
         const directSubject = document.getElementById('direct-subject');
+        const directStockEnabled = document.getElementById('direct-stock-enabled');
+        const directStockSiteWrap = document.getElementById('direct-stock-site-wrap');
+        const stockSiteSelect = document.getElementById('stock-site-select');
 
         const money = value => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0) + ' ' + currency;
         const inputNumber = value => {
@@ -228,6 +261,38 @@
         };
         const globalTaxRate = () => applyTax.checked ? Number(taxRateInput.value || 0) : 0;
         const selectedClient = () => clients.find(item => String(item.id) === String(clientSelect.value));
+        const directStockActive = () => directStockEnabled?.checked && document.querySelector('.source-radio:checked').value === 'direct';
+
+        function siteStockForRow(row) {
+            if (!directStockActive()) return null;
+            const siteStocks = JSON.parse(row.dataset.siteStocks || '{}');
+            const siteStock = siteStocks[String(stockSiteSelect.value)];
+            return siteStock ? Number(siteStock.physical_stock || 0) : 0;
+        }
+
+        function refreshStockDisplay(row) {
+            const stockDisplay = row.querySelector('.site-stock');
+            const warning = row.querySelector('.stock-warning');
+            const stock = siteStockForRow(row);
+            const qty = Number(row.querySelector('.quantity-input').value || 0);
+
+            if (stock === null || !row.querySelector('.product-id-input').value) {
+                stockDisplay.textContent = '-';
+                warning.textContent = '';
+                warning.classList.add('hidden');
+                return;
+            }
+
+            stockDisplay.textContent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 3 }).format(stock);
+
+            if (qty > stock) {
+                warning.textContent = 'Stock insuffisant';
+                warning.classList.remove('hidden');
+            } else {
+                warning.textContent = '';
+                warning.classList.add('hidden');
+            }
+        }
 
         function toggleSource() {
             const source = document.querySelector('.source-radio:checked').value;
@@ -236,6 +301,8 @@
             directPanel.classList.toggle('hidden', source !== 'direct');
             directSubject.disabled = source !== 'direct';
             directSubject.required = source === 'direct';
+            directStockSiteWrap.classList.toggle('hidden', !directStockEnabled.checked || source !== 'direct');
+            body.querySelectorAll('.item-row').forEach(refreshStockDisplay);
         }
 
         async function searchProducts(term, productId = null) {
@@ -250,8 +317,10 @@
             row.querySelector('.product-search').value = product.client_designation || product.name;
             row.querySelector('.product-label').textContent = `${product.code} - ${product.unit}`;
             row.querySelector('.client-ref').textContent = product.client_reference || product.code;
+            row.dataset.siteStocks = JSON.stringify(product.site_stocks || {});
             const price = row.querySelector('.price-input');
             if (!price.value || Number(price.value) <= 0) price.value = inputNumber(product.sale_price);
+            refreshStockDisplay(row);
             refreshTotals();
         }
 
@@ -270,6 +339,7 @@
                 taxTotal += tax;
                 row.querySelector('.line-total').textContent = money(ht + tax);
                 row.querySelector('.line-detail').textContent = taxRate > 0 ? `HT ${money(ht)} - TVA ${money(tax)}` : `HT ${money(ht)}`;
+                refreshStockDisplay(row);
             });
             document.getElementById('subtotal').textContent = money(subtotal);
             document.getElementById('discount-total').textContent = money(discountTotal);
@@ -319,6 +389,10 @@
             clone.querySelector('.line-detail').textContent = '';
             clone.querySelector('.product-label').textContent = '';
             clone.querySelector('.client-ref').textContent = '-';
+            clone.querySelector('.site-stock').textContent = '-';
+            clone.querySelector('.stock-warning').textContent = '';
+            clone.querySelector('.stock-warning').classList.add('hidden');
+            clone.dataset.siteStocks = '{}';
             body.appendChild(clone);
             reindexRows();
             bindRow(clone);
@@ -334,6 +408,8 @@
         });
         applyTax.addEventListener('change', refreshTotals);
         taxRateInput.addEventListener('input', refreshTotals);
+        directStockEnabled.addEventListener('change', toggleSource);
+        stockSiteSelect.addEventListener('change', () => body.querySelectorAll('.item-row').forEach(refreshStockDisplay));
         body.querySelectorAll('.item-row').forEach(bindRow);
         toggleSource();
         refreshTotals();

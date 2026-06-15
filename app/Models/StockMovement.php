@@ -18,6 +18,8 @@ class StockMovement extends Model
 
     protected $fillable = [
         'product_id',
+        'stock_site_id',
+        'destination_stock_site_id',
         'type',
         'direction',
         'status',
@@ -62,6 +64,16 @@ class StockMovement extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function stockSite(): BelongsTo
+    {
+        return $this->belongsTo(StockSite::class);
+    }
+
+    public function destinationStockSite(): BelongsTo
+    {
+        return $this->belongsTo(StockSite::class, 'destination_stock_site_id');
     }
 
     public function source(): MorphTo
