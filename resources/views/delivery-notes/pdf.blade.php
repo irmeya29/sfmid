@@ -31,6 +31,8 @@
             </tr>
         </table>
 
+        @include('pdf._company_identity')
+
         <table class="erp-info">
             <tr>
                 <td style="width: 58%;">
@@ -67,8 +69,7 @@
                     <th>Designation</th>
                     <th style="width: 13%;" class="right">Qte demandee</th>
                     <th style="width: 13%;" class="right">Qte livree</th>
-                    <th style="width: 10%;">Unite</th>
-                    <th style="width: 18%;">Observation</th>
+                    <th style="width: 12%;">Unite</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,7 +80,6 @@
                         <td class="right">{{ $qty($item->quantity) }}</td>
                         <td class="right">{{ $qty($item->delivered_quantity) }}</td>
                         <td>{{ $item->unit }}</td>
-                        <td></td>
                     </tr>
                 @endforeach
             </tbody>

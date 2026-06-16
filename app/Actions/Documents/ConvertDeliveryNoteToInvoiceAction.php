@@ -74,7 +74,6 @@ class ConvertDeliveryNoteToInvoiceAction
                 'issue_date' => now()->toDateString(),
                 'due_date' => now()->addDays(30)->toDateString(),
                 'subject' => $deliveryNote->subject ?: $deliveryNote->proforma?->subject ?: "Facturation du BL {$deliveryNote->number}",
-                'incoterm' => $deliveryNote->proforma?->incoterm,
                 'currency' => $deliveryNote->proforma?->currency ?: 'FCFA',
                 'subtotal' => $deliveryNote->subtotal,
                 'discount_total' => $deliveryNote->discount_total,

@@ -48,7 +48,6 @@ class SaveDirectInvoiceAction
                 'issue_date' => $data['issue_date'],
                 'due_date' => $data['due_date'] ?? null,
                 'subject' => $data['subject'],
-                'incoterm' => $data['incoterm'] ?? null,
                 'currency' => $data['currency'] ?? 'FCFA',
                 'subtotal' => $totals['subtotal'],
                 'discount_total' => $totals['discount_total'],

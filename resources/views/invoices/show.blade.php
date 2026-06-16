@@ -63,7 +63,6 @@
             <h3 class="text-base font-bold text-slate-950">Conditions</h3>
             <div class="mt-5 space-y-4">
                 <div class="border-b pb-4"><p class="text-sm text-slate-500">Objet</p><p class="mt-1 font-semibold">{{ $invoice->subject ?: '-' }}</p></div>
-                <div class="flex justify-between"><span class="text-sm text-slate-500">Incoterm</span><span class="font-bold">{{ $invoice->incoterm ?: '-' }}</span></div>
                 <div class="flex justify-between"><span class="text-sm text-slate-500">Devise</span><span class="font-bold">{{ $invoice->currency ?: 'FCFA' }}</span></div>
                 <div class="flex justify-between"><span class="text-sm text-slate-500">Delai livraison</span><span class="font-bold">{{ $invoice->delivery_delay ?: '-' }}</span></div>
                 <div class="border-t pt-4"><p class="text-sm text-slate-500">Reglement</p><p class="mt-1 font-semibold">{{ $invoice->payment_terms ?: '-' }}</p></div>

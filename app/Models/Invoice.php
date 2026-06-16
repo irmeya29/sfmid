@@ -30,7 +30,6 @@ class Invoice extends Model
         'issue_date',
         'due_date',
         'subject',
-        'incoterm',
         'currency',
         'subtotal',
         'discount_total',

@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use RuntimeException;
 
 class CommercialDocumentStatusController extends Controller
 {
@@ -98,7 +99,8 @@ class CommercialDocumentStatusController extends Controller
 
         $status = InvoiceStatus::from($data['status']);
 
-        DB::transaction(function () use ($request, $invoice, $status, $data, $activityLogger, $validationHistoryLogger, $suspenseStockCloser, $directInvoiceStockMover): void {
+        try {
+            DB::transaction(function () use ($request, $invoice, $status, $data, $activityLogger, $validationHistoryLogger, $suspenseStockCloser, $directInvoiceStockMover): void {
             $fromStatus = $invoice->status;
 
             $invoice->forceFill([
@@ -125,7 +127,10 @@ class CommercialDocumentStatusController extends Controller
             }
 
             $this->logStatusChange($validationHistoryLogger, $activityLogger, $invoice, 'invoices', $fromStatus->value, $status->value, $data['reason']);
-        });
+            });
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return back()->with('success', 'Statut de la facture modifie.');
     }

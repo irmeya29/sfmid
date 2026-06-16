@@ -26,7 +26,6 @@ class StoreInvoiceRequest extends FormRequest
             'issue_date' => ['required_if:source_type,direct', 'nullable', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:issue_date'],
             'subject' => ['required_if:source_type,direct', 'nullable', 'string', 'max:255'],
-            'incoterm' => ['nullable', 'string', 'max:50'],
             'currency' => ['nullable', 'string', 'max:10'],
             'payment_terms' => ['nullable', 'string', 'max:2000'],
             'delivery_delay' => ['nullable', 'string', 'max:255'],

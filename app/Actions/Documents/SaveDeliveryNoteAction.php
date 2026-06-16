@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\Audit\ActivityLogger;
 use App\Services\Numbering\DocumentNumberGenerator;
+use App\Services\Stock\StockSiteInventory;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -20,6 +21,7 @@ class SaveDeliveryNoteAction
         private readonly DocumentNumberGenerator $documentNumberGenerator,
         private readonly ActivityLogger $activityLogger,
         private readonly ValidationHistoryLogger $validationHistoryLogger,
+        private readonly StockSiteInventory $inventory,
     ) {}
 
     /**
@@ -76,6 +78,7 @@ class SaveDeliveryNoteAction
             }
 
             $totals = $this->buildItemsAndTotals($data['items'], (int) $data['client_id']);
+            $stockSiteId = (int) ($data['stock_site_id'] ?? $this->inventory->salesSite()->id);
             $newStatus = $user->bypassesDocumentValidation()
                 ? DeliveryNoteStatus::Validated
                 : ($isUpdate && $fromStatus === DeliveryNoteStatus::Rejected
@@ -85,7 +88,7 @@ class SaveDeliveryNoteAction
             $deliveryNote->fill([
                 'client_id' => $data['client_id'],
                 'client_delivery_site_id' => $data['client_delivery_site_id'] ?? null,
-                'stock_site_id' => $data['stock_site_id'],
+                'stock_site_id' => $stockSiteId,
                 'status' => $newStatus,
                 'submitted_at' => $newStatus === DeliveryNoteStatus::Validated ? now() : $deliveryNote->submitted_at,
                 'validated_by' => $newStatus === DeliveryNoteStatus::Validated ? $user->id : $deliveryNote->validated_by,

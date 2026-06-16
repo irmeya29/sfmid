@@ -341,8 +341,12 @@
         </header>
 
         <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 xl:px-8">
+            @php
+                $errorMessage = session('error');
+                $stockTransferError = is_string($errorMessage) && stripos($errorMessage, 'Stock physique insuffisant') !== false;
+            @endphp
             <x-alert type="success" :message="session('success')" />
-            <x-alert type="error" :message="session('error')" />
+            <x-alert type="error" :message="$stockTransferError ? null : $errorMessage" />
 
             @if($errors->any())
                 <x-alert type="error" message="Veuillez corriger les champs signalés avant de continuer." />
@@ -354,6 +358,41 @@
 </div>
 
 <x-confirm-modal />
+
+@if($stockTransferError)
+    <div id="stock-transfer-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
+        <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/10">
+            <div class="border-b border-orange-100 bg-orange-50 px-5 py-4">
+                <div class="flex items-start gap-3">
+                    <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
+                        <i data-lucide="triangle-alert" class="h-5 w-5"></i>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-base font-black text-slate-950">Stock insuffisant sur le site choisi</h3>
+                        <p class="mt-1 text-sm font-semibold text-orange-800">{{ $errorMessage }}</p>
+                    </div>
+                    <button type="button" data-close-stock-modal class="rounded-xl p-2 text-slate-500 hover:bg-white hover:text-slate-900" aria-label="Fermer">
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="px-5 py-5">
+                <p class="text-sm leading-6 text-slate-600">
+                    Le produit existe peut-etre dans un autre site de stock. Faites un transfert vers le site de vente selectionne, puis relancez la validation ou la livraison.
+                </p>
+                <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button type="button" data-close-stock-modal class="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                        Fermer
+                    </button>
+                    <a href="{{ route('stock.transfers.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-3 text-sm font-black text-white hover:bg-orange-700">
+                        <i data-lucide="repeat-2" class="h-4 w-4"></i>
+                        Faire un transfert
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 
 <script>
     lucide.createIcons();
@@ -380,6 +419,12 @@
             button.setAttribute('aria-label', visible ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
             button.innerHTML = `<i data-lucide="${visible ? 'eye' : 'eye-off'}" class="h-4 w-4"></i>`;
             lucide.createIcons();
+        });
+    });
+
+    document.querySelectorAll('[data-close-stock-modal]').forEach(button => {
+        button.addEventListener('click', () => {
+            document.getElementById('stock-transfer-modal')?.remove();
         });
     });
 </script>

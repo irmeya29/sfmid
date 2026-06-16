@@ -107,15 +107,6 @@
                     @error('subject')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Incoterm / condition de vente</label>
-                    <select name="incoterm" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                        <option value="">Non precise</option>
-                        @foreach(['EXW', 'DAP', 'DDP', 'Autres'] as $incoterm)
-                            <option value="{{ $incoterm }}" @selected(old('incoterm') === $incoterm)>{{ $incoterm }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">Devise</label>
                     <input name="currency" value="{{ $currency }}" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
                 </div>
@@ -312,14 +303,17 @@
             return response.ok ? await response.json() : [];
         }
 
-        function selectProduct(row, product) {
+        function selectProduct(row, product, forcePrice = true) {
+            const previousProductId = row.querySelector('.product-id-input').value;
             row.querySelector('.product-id-input').value = product.id;
             row.querySelector('.product-search').value = product.client_designation || product.name;
             row.querySelector('.product-label').textContent = `${product.code} - ${product.unit}`;
             row.querySelector('.client-ref').textContent = product.client_reference || product.code;
             row.dataset.siteStocks = JSON.stringify(product.site_stocks || {});
             const price = row.querySelector('.price-input');
-            if (!price.value || Number(price.value) <= 0) price.value = inputNumber(product.sale_price);
+            if (forcePrice || !price.value || Number(price.value) <= 0 || String(previousProductId) !== String(product.id)) {
+                price.value = inputNumber(product.sale_price);
+            }
             refreshStockDisplay(row);
             refreshTotals();
         }
@@ -366,7 +360,7 @@
                 results.className = 'product-results absolute left-0 top-full z-50 mt-2 max-h-64 w-[min(36rem,calc(100vw-3rem))] min-w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-900/5';
                 results.querySelectorAll('button').forEach(button => button.addEventListener('click', async () => {
                     const matches = await searchProducts('', button.dataset.id);
-                    if (matches[0]) selectProduct(row, matches[0]);
+                    if (matches[0]) selectProduct(row, matches[0], true);
                     results.classList.add('hidden');
                 }));
             });
@@ -378,7 +372,7 @@
                 refreshTotals();
             });
             const productId = row.querySelector('.product-id-input').value;
-            if (productId) searchProducts('', productId).then(matches => matches[0] && selectProduct(row, matches[0]));
+            if (productId) searchProducts('', productId).then(matches => matches[0] && selectProduct(row, matches[0], false));
         }
 
         document.querySelectorAll('.source-radio').forEach(radio => radio.addEventListener('change', toggleSource));
@@ -403,7 +397,7 @@
             if (client?.commercial_terms && !paymentTerms.value.trim()) paymentTerms.value = client.commercial_terms;
             body.querySelectorAll('.item-row').forEach(row => {
                 const productId = row.querySelector('.product-id-input').value;
-                if (productId) searchProducts('', productId).then(matches => matches[0] && selectProduct(row, matches[0]));
+                if (productId) searchProducts('', productId).then(matches => matches[0] && selectProduct(row, matches[0], true));
             });
         });
         applyTax.addEventListener('change', refreshTotals);

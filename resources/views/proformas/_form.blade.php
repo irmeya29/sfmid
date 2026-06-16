@@ -84,16 +84,6 @@
         </div>
 
         <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">Incoterm / condition de vente</label>
-            <select name="incoterm" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                <option value="">Non precise</option>
-                @foreach(['EXW', 'DAP', 'DDP', 'Autres'] as $incoterm)
-                    <option value="{{ $incoterm }}" @selected(old('incoterm', $proforma->incoterm) === $incoterm)>{{ $incoterm }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <div>
             <label class="mb-2 block text-sm font-semibold text-slate-700">Devise</label>
             <input name="currency" value="{{ $currency }}" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
         </div>
@@ -248,15 +238,20 @@ function searchProducts(term) {
     ].filter(Boolean).some(value => String(value).toLowerCase().includes(needle))).slice(0, 8);
 }
 
-function selectProduct(row, selectedProduct) {
+function selectProduct(row, selectedProduct, forcePrice = true) {
     const ref = clientRef(selectedProduct);
+    const previousProductId = row.querySelector('.product-id-input').value;
     row.querySelector('.product-id-input').value = selectedProduct.id;
     row.querySelector('.product-search').value = selectedProduct.name;
     row.querySelector('.product-label').textContent = `${selectedProduct.code} - ${selectedProduct.unit} - Stock ${qty(selectedProduct.physical_stock)}`;
     row.querySelector('.client-ref').textContent = ref?.client_reference || selectedProduct.internal_reference || selectedProduct.code;
     row.querySelector('.internal-ref').textContent = `Ref SFMID : ${selectedProduct.internal_reference || selectedProduct.code}`;
     if (ref?.client_designation) row.querySelector('.product-search').value = ref.client_designation;
-    if (ref?.sale_price) row.querySelector('.price-input').value = inputNumber(ref.sale_price);
+    const priceInput = row.querySelector('.price-input');
+    const autoPrice = Number(ref?.sale_price || selectedProduct.sale_price || 0);
+    if (forcePrice || !priceInput.value || Number(priceInput.value) <= 0 || String(previousProductId) !== String(selectedProduct.id)) {
+        priceInput.value = inputNumber(autoPrice);
+    }
     if (ref?.discount_rate) row.querySelector('.discount-input').value = inputNumber(ref.discount_rate);
     refreshRow(row);
 }
@@ -321,7 +316,7 @@ function bind(row) {
             : '<div class="px-3 py-3 text-sm text-slate-500">Aucun article trouve.</div>';
         results.className = 'product-results absolute left-0 top-full z-50 mt-2 max-h-64 w-[min(36rem,calc(100vw-3rem))] min-w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-900/5';
         results.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
-            selectProduct(row, product(button.dataset.id));
+            selectProduct(row, product(button.dataset.id), true);
             results.classList.add('hidden');
         }));
     });
@@ -332,7 +327,7 @@ function bind(row) {
         refreshTotals();
     });
     const selectedProduct = product(row.querySelector('.product-id-input').value);
-    if (selectedProduct) selectProduct(row, selectedProduct);
+    if (selectedProduct) selectProduct(row, selectedProduct, false);
     refreshRow(row);
 }
 
@@ -355,7 +350,7 @@ clientSelect.addEventListener('change', () => {
     if (selected?.commercial_terms && !paymentTerms.value.trim()) paymentTerms.value = selected.commercial_terms;
     body.querySelectorAll('.item-row').forEach(row => {
         const selectedProduct = product(row.querySelector('.product-id-input').value);
-        if (selectedProduct) selectProduct(row, selectedProduct);
+        if (selectedProduct) selectProduct(row, selectedProduct, true);
     });
 });
 siteSelect.addEventListener('change', () => siteSelect.dataset.selected = siteSelect.value);

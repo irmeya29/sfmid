@@ -25,7 +25,6 @@ class Proforma extends Model
         'issue_date',
         'valid_until',
         'subject',
-        'incoterm',
         'currency',
         'payment_terms',
         'delivery_delay',

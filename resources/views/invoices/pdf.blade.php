@@ -33,25 +33,26 @@
             </tr>
         </table>
 
+        @include('pdf._company_identity')
+
         <table class="erp-info">
             <tr>
                 <td style="width: 58%;">
                     <div class="erp-card">
                         <div class="erp-card-title">Client facture</div>
                         <div class="erp-card-name">{{ $invoice->client?->name ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Code client</span> {{ $invoice->client?->code ?: '-' }}</div>
-                        @if($invoice->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span> {{ $invoice->client->phone }}</div>@endif
-                        @if($invoice->client?->email)<div class="erp-row"><span class="erp-label">Email</span> {{ $invoice->client->email }}</div>@endif
-                        @if($invoice->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span> {{ $invoice->client->ifu }}</div>@endif
+                        <div class="erp-row"><span class="erp-label">Code client</span><span class="erp-value">{{ $invoice->client?->code ?: '-' }}</span></div>
+                        @if($invoice->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $invoice->client->phone }}</span></div>@endif
+                        @if($invoice->client?->email)<div class="erp-row"><span class="erp-label">Email</span><span class="erp-value">{{ $invoice->client->email }}</span></div>@endif
+                        @if($invoice->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span><span class="erp-value">{{ $invoice->client->ifu }}</span></div>@endif
                     </div>
                 </td>
                 <td class="erp-info-gap"></td>
                 <td style="width: 42%;">
                     <div class="erp-card">
                         <div class="erp-card-title">Conditions commerciales</div>
-                        <div class="erp-row"><span class="erp-label">Incoterm</span> {{ $invoice->incoterm ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Devise</span> {{ $currency }}</div>
-                        <div class="erp-row"><span class="erp-label">Delai</span> {{ $invoice->delivery_delay ?: '-' }}</div>
+                        <div class="erp-row"><span class="erp-label">Devise</span><span class="erp-value">{{ $currency }}</span></div>
+                        <div class="erp-row"><span class="erp-label">Delai</span><span class="erp-value">{{ $invoice->delivery_delay ?: '-' }}</span></div>
                         @if($invoice->payment_terms)<div class="erp-row" style="margin-top: 6px;">{!! nl2br(e($invoice->payment_terms)) !!}</div>@endif
                     </div>
                 </td>

@@ -20,7 +20,6 @@ class UpdateInvoiceRequest extends FormRequest
             'issue_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:issue_date'],
             'subject' => ['required', 'string', 'max:255'],
-            'incoterm' => ['nullable', 'string', 'max:50'],
             'currency' => ['nullable', 'string', 'max:10'],
             'payment_terms' => ['nullable', 'string', 'max:2000'],
             'delivery_delay' => ['nullable', 'string', 'max:255'],

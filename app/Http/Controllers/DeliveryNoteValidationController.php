@@ -13,6 +13,7 @@ use App\Models\DeliveryNote;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 class DeliveryNoteValidationController extends Controller
 {
@@ -63,14 +64,18 @@ class DeliveryNoteValidationController extends Controller
     ): RedirectResponse {
         $validated = $request->validated();
 
-        $action->execute(
-            deliveryNote: $deliveryNote,
-            user: $request->user(),
-            receiverName: $validated['receiver_name'],
-            receiverPhone: $validated['receiver_phone'] ?? null,
-            deliveredAt: Carbon::parse($validated['delivered_at']),
-            deliveryAddress: $validated['delivery_address'] ?? null,
-        );
+        try {
+            $action->execute(
+                deliveryNote: $deliveryNote,
+                user: $request->user(),
+                receiverName: $validated['receiver_name'],
+                receiverPhone: $validated['receiver_phone'] ?? null,
+                deliveredAt: Carbon::parse($validated['delivered_at']),
+                deliveryAddress: $validated['delivery_address'] ?? null,
+            );
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
 
         return redirect()
             ->route('delivery-notes.show', $deliveryNote)

@@ -130,7 +130,11 @@ class InvoiceController extends Controller
                 ->with('success', 'Facture creee depuis la proforma. Aucun paiement automatique.');
         }
 
-        $invoice = $saveDirectInvoice->execute($data, $request->user());
+        try {
+            $invoice = $saveDirectInvoice->execute($data, $request->user());
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
 
         return redirect()
             ->route('invoices.show', $invoice)

@@ -28,7 +28,6 @@ class StoreProformaRequest extends FormRequest
             'issue_date' => ['required', 'date'],
             'valid_until' => ['nullable', 'date', 'after_or_equal:issue_date'],
             'subject' => ['required', 'string', 'max:255'],
-            'incoterm' => ['nullable', 'string', 'max:50'],
             'currency' => ['nullable', 'string', 'max:20'],
             'payment_terms' => ['nullable', 'string', 'max:1000'],
             'delivery_delay' => ['nullable', 'string', 'max:255'],

@@ -70,7 +70,6 @@ class CreateInvoiceFromCommercialSourceAction
                 'issue_date' => now()->toDateString(),
                 'due_date' => now()->addDays(30)->toDateString(),
                 'subject' => $source instanceof Proforma ? $source->subject : "Facturation du bon de commande {$source->number}",
-                'incoterm' => $source instanceof Proforma ? $source->incoterm : null,
                 'currency' => $source instanceof Proforma ? ($source->currency ?: 'FCFA') : 'FCFA',
                 'subtotal' => $source->subtotal,
                 'discount_total' => $source->discount_total,

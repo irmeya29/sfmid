@@ -32,17 +32,19 @@
             </tr>
         </table>
 
+        @include('pdf._company_identity')
+
         <table class="erp-info">
             <tr>
                 <td style="width: 58%;">
                     <div class="erp-card">
                         <div class="erp-card-title">Client</div>
                         <div class="erp-card-name">{{ $proforma->client?->name ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Code client</span> {{ $proforma->client?->code ?: '-' }}</div>
-                        @if($proforma->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span> {{ $proforma->client->phone }}</div>@endif
-                        @if($proforma->client?->email)<div class="erp-row"><span class="erp-label">Email</span> {{ $proforma->client->email }}</div>@endif
-                        @if($proforma->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span> {{ $proforma->client->ifu }}</div>@endif
-                        @if($proforma->client?->rccm)<div class="erp-row"><span class="erp-label">RCCM</span> {{ $proforma->client->rccm }}</div>@endif
+                        <div class="erp-row"><span class="erp-label">Code client</span><span class="erp-value">{{ $proforma->client?->code ?: '-' }}</span></div>
+                        @if($proforma->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $proforma->client->phone }}</span></div>@endif
+                        @if($proforma->client?->email)<div class="erp-row"><span class="erp-label">Email</span><span class="erp-value">{{ $proforma->client->email }}</span></div>@endif
+                        @if($proforma->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span><span class="erp-value">{{ $proforma->client->ifu }}</span></div>@endif
+                        @if($proforma->client?->rccm)<div class="erp-row"><span class="erp-label">RCCM</span><span class="erp-value">{{ $proforma->client->rccm }}</span></div>@endif
                     </div>
                 </td>
                 <td class="erp-info-gap"></td>
@@ -50,15 +52,14 @@
                     <div class="erp-card">
                         <div class="erp-card-title">Conditions commerciales</div>
                         @if($proforma->deliverySite)
-                            <div class="erp-row"><span class="erp-label">Site</span> {{ $proforma->deliverySite->name }}</div>
-                            @if($proforma->deliverySite->address)<div class="erp-row"><span class="erp-label">Adresse</span> {{ $proforma->deliverySite->address }}</div>@endif
+                            <div class="erp-row"><span class="erp-label">Site</span><span class="erp-value">{{ $proforma->deliverySite->name }}</span></div>
+                            @if($proforma->deliverySite->address)<div class="erp-row"><span class="erp-label">Adresse</span><span class="erp-value">{{ $proforma->deliverySite->address }}</span></div>@endif
                         @else
-                            <div class="erp-row"><span class="erp-label">Site</span> Non renseigne</div>
+                            <div class="erp-row"><span class="erp-label">Site</span><span class="erp-value">Non renseigne</span></div>
                         @endif
-                        <div class="erp-row"><span class="erp-label">Incoterm</span> {{ $proforma->incoterm ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Reglement</span> {{ $proforma->payment_terms ?: $proforma->terms ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Delai livraison</span> {{ $proforma->delivery_delay ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Devise</span> {{ $currency }}</div>
+                        <div class="erp-row"><span class="erp-label">Reglement</span><span class="erp-value">{{ $proforma->payment_terms ?: $proforma->terms ?: '-' }}</span></div>
+                        <div class="erp-row"><span class="erp-label">Delai livraison</span><span class="erp-value">{{ $proforma->delivery_delay ?: '-' }}</span></div>
+                        <div class="erp-row"><span class="erp-label">Devise</span><span class="erp-value">{{ $currency }}</span></div>
                     </div>
                 </td>
             </tr>

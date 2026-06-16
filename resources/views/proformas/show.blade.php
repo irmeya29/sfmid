@@ -119,10 +119,6 @@
                     <p class="mt-1 font-semibold text-slate-950">{{ $proforma->subject ?: 'Non renseigne' }}</p>
                 </div>
                 <div class="flex justify-between gap-4">
-                    <span class="text-slate-500">Incoterm</span>
-                    <strong class="text-right text-slate-950">{{ $proforma->incoterm ?: '-' }}</strong>
-                </div>
-                <div class="flex justify-between gap-4">
                     <span class="text-slate-500">Delai livraison</span>
                     <strong class="text-right text-slate-950">{{ $proforma->delivery_delay ?: '-' }}</strong>
                 </div>
