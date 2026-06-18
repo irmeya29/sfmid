@@ -20,7 +20,7 @@ class ExpenseValidationTest extends TestCase
 
     public function test_user_can_create_expense_with_attachment_and_validate_it(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         $this->sequence();
 
         $creator = $this->userWithPermissions([
@@ -54,7 +54,10 @@ class ExpenseValidationTest extends TestCase
         $this->assertSame('DEP-'.now()->format('Y').'-00001', $expense->number);
         $this->assertSame(ExpenseStatus::Draft, $expense->status);
         $this->assertNotNull($expense->attachment_path);
-        Storage::disk('public')->assertExists($expense->attachment_path);
+        Storage::disk('local')->assertExists($expense->attachment_path);
+
+        $this->actingAs($creator)->get(route('expenses.attachment', $expense))
+            ->assertOk();
 
         $this->actingAs($creator)->post(route('expenses.submit', $expense))
             ->assertRedirect(route('expenses.show', $expense));
@@ -89,6 +92,35 @@ class ExpenseValidationTest extends TestCase
 
         $this->assertSame(ExpenseStatus::Rejected, $expense->refresh()->status);
         $this->assertSame('Justificatif incomplet.', $expense->rejection_reason);
+    }
+
+    public function test_draft_expense_can_be_deleted_but_pending_expense_cannot(): void
+    {
+        Storage::fake('local');
+
+        $user = $this->userWithPermissions(['expenses.view', 'expenses.delete_draft']);
+        $draft = Expense::factory()->create([
+            'status' => ExpenseStatus::Draft,
+            'attachment_path' => 'expense-attachments/ticket.jpg',
+        ]);
+        $pending = Expense::factory()->create([
+            'status' => ExpenseStatus::PendingValidation,
+        ]);
+
+        Storage::disk('local')->put($draft->attachment_path, 'ticket');
+
+        $this->actingAs($user)->get(route('expenses.index'))
+            ->assertOk()
+            ->assertSee('Supprimer la depense');
+
+        $this->actingAs($user)->delete(route('expenses.destroy', $pending))
+            ->assertForbidden();
+
+        $this->actingAs($user)->delete(route('expenses.destroy', $draft))
+            ->assertRedirect(route('expenses.index'));
+
+        $this->assertSoftDeleted($draft);
+        Storage::disk('local')->assertMissing($draft->attachment_path);
     }
 
     public function test_sensitive_expense_categories_are_hidden_and_forbidden_without_permission(): void

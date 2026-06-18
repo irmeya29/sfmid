@@ -23,7 +23,7 @@ class UpdateExpenseRequest extends FormRequest
             'beneficiary' => ['nullable', 'string', 'max:255'],
             'payment_method' => ['nullable', 'string', 'max:50'],
             'payment_reference' => ['nullable', 'string', 'max:255'],
-            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:4096'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp,bmp,tif,tiff', 'max:10240'],
             'description' => ['required', 'string', 'max:2000'],
         ];
     }

@@ -20,7 +20,7 @@ class StoreTreasuryExpenseRequest extends FormRequest
             'payment_method' => ['required', 'string', 'max:50'],
             'beneficiary' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
-            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:4096'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp,bmp,tif,tiff', 'max:10240'],
         ];
     }
 }

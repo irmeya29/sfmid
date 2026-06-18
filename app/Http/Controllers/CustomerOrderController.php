@@ -15,8 +15,10 @@ use App\Services\Numbering\DocumentNumberGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
 
 class CustomerOrderController extends Controller
 {
@@ -64,14 +66,14 @@ class CustomerOrderController extends Controller
             'customer_reference' => ['nullable', 'string', 'max:255'],
             'order_date' => ['required', 'date'],
             'confirmed_terms' => ['nullable', 'string', 'max:2000'],
-            'attachment' => ['nullable', 'file', 'max:4096'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp,bmp,tif,tiff', 'max:10240'],
             'items' => ['required_if:source_type,direct', 'array', 'min:1'],
             'items.*.product_id' => ['nullable', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['nullable', 'numeric', 'min:0.001'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $attachmentPath = $request->file('attachment')?->store('customer-orders', 'public');
+        $attachmentPath = $request->file('attachment')?->store('customer-orders', 'local');
 
         if ($data['source_type'] === 'proforma') {
             try {
@@ -163,6 +165,21 @@ class CustomerOrderController extends Controller
         $customerOrder->load(['client', 'deliverySite', 'proforma', 'items.product', 'deliveryNotes', 'invoices']);
 
         return view('customer-orders.show', compact('customerOrder'));
+    }
+
+    public function attachment(CustomerOrder $customerOrder): Response
+    {
+        abort_if(! $customerOrder->attachment_path, 404);
+
+        $disk = Storage::disk('local')->exists($customerOrder->attachment_path)
+            ? Storage::disk('local')
+            : (Storage::disk('public')->exists($customerOrder->attachment_path) ? Storage::disk('public') : null);
+
+        abort_if($disk === null, 404);
+
+        return response()->file($disk->path($customerOrder->attachment_path), [
+            'Content-Disposition' => 'inline; filename="'.basename($customerOrder->attachment_path).'"',
+        ]);
     }
 
     public function convertToDeliveryNote(CustomerOrder $customerOrder, Request $request, ConvertCustomerOrderToDeliveryNoteAction $action): RedirectResponse

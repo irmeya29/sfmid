@@ -14,9 +14,9 @@
             @can('export', \App\Models\Expense::class)
                 <x-button :href="route('expenses.pdf', request()->query())" target="_blank" tone="secondary" icon="file-down">PDF</x-button>
             @endcan
-            @if(auth()->user()?->hasPermission('treasury.create_expense'))
+            @can('create', \App\Models\Expense::class)
                 <x-button :href="route('expenses.create')" icon="receipt-text">Nouvelle depense</x-button>
-            @endif
+            @endcan
         </div>
     </div>
 
@@ -76,6 +76,13 @@
                                     <x-action-button :href="route('expenses.show', $expense)" icon="eye" label="Voir la depense" />
                                     @can('update', $expense)
                                         <x-action-button :href="route('expenses.edit', $expense)" icon="pencil" label="Modifier la depense" tone="info" />
+                                    @endcan
+                                    @can('delete', $expense)
+                                        <form method="POST" action="{{ route('expenses.destroy', $expense) }}" class="inline-flex" data-confirm="Supprimer cette depense brouillon ?">
+                                            @csrf
+                                            @method('DELETE')
+                                            <x-action-button type="submit" icon="trash-2" label="Supprimer la depense" tone="danger" />
+                                        </form>
                                     @endcan
                                 </div>
                             </td>

@@ -320,6 +320,10 @@ Route::middleware(['auth'])->group(function (): void {
         ->only(['index', 'create', 'store', 'show'])
         ->middleware('permission:proformas.view|proformas.create|delivery_notes.create|invoices.create');
 
+    Route::get('/customer-orders/{customerOrder}/attachment', [CustomerOrderController::class, 'attachment'])
+        ->name('customer-orders.attachment')
+        ->middleware('permission:proformas.view|delivery_notes.create|invoices.create');
+
     Route::post('/customer-orders/{customerOrder}/convert-to-delivery-note', [CustomerOrderController::class, 'convertToDeliveryNote'])
         ->name('customer-orders.convert-to-delivery-note')
         ->middleware('permission:delivery_notes.create');
@@ -419,6 +423,10 @@ Route::middleware(['auth'])->group(function (): void {
         ->only(['index', 'create', 'store', 'show'])
         ->middleware('permission:payments.view|payments.create');
 
+    Route::get('/payments/{payment}/attachment', [PaymentController::class, 'attachment'])
+        ->name('payments.attachment')
+        ->middleware('permission:payments.view');
+
     Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])
         ->name('payments.receipt')
         ->middleware('permission:payments.export_receipt_pdf');
@@ -436,8 +444,11 @@ Route::middleware(['auth'])->group(function (): void {
         ->middleware('permission:payments.reject');
 
     Route::resource('expenses', ExpenseController::class)
-        ->except(['destroy'])
-        ->middleware('permission:expenses.view|expenses.create|expenses.update');
+        ->middleware('permission:expenses.view|expenses.create|expenses.update|expenses.delete_draft');
+
+    Route::get('/expenses/{expense}/attachment', [ExpenseController::class, 'attachment'])
+        ->name('expenses.attachment')
+        ->middleware('permission:expenses.view');
 
     Route::resource('expense-categories', ExpenseCategoryController::class)
         ->except(['show'])

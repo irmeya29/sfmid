@@ -26,6 +26,7 @@ class TreasuryController extends Controller
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('payment_date', '>=', $request->date('date_from')))
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('payment_date', '<=', $request->date('date_to')))
             ->get()
+            ->toBase()
             ->map(fn (Payment $payment): array => [
                 'date' => $payment->payment_date,
                 'type' => 'recette',
@@ -44,6 +45,7 @@ class TreasuryController extends Controller
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('expense_date', '<=', $request->date('date_to')))
             ->when($request->filled('category_id'), fn ($query) => $query->where('expense_category_id', $request->integer('category_id')))
             ->get()
+            ->toBase()
             ->map(fn (Expense $expense): array => [
                 'date' => $expense->expense_date,
                 'type' => 'depense',
@@ -55,7 +57,10 @@ class TreasuryController extends Controller
                 'amount_out' => (float) $expense->amount,
             ]);
 
-        $entries = $receipts->merge($expenses)->sortByDesc('date')->values();
+        $entries = collect($receipts->all())
+            ->merge($expenses->all())
+            ->sortByDesc('date')
+            ->values();
 
         return view('treasury.index', [
             'entries' => $entries,
@@ -75,7 +80,7 @@ class TreasuryController extends Controller
     public function storeExpense(StoreTreasuryExpenseRequest $request, DocumentNumberGenerator $numbers, ActivityLogger $logger): RedirectResponse
     {
         $data = $request->validated();
-        $attachmentPath = $request->file('attachment')?->store('expense-attachments', 'public');
+        $attachmentPath = $request->file('attachment')?->store('expense-attachments', 'local');
 
         $expense = Expense::query()->create([
             'number' => $numbers->generate('expense'),

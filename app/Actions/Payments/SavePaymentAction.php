@@ -37,7 +37,7 @@ class SavePaymentAction
                 throw new RuntimeException('Le montant du paiement dépasse le solde de la facture.');
             }
 
-            $attachmentPath = $attachment?->store('payment-attachments', 'public');
+            $attachmentPath = $attachment?->store('payment-attachments', 'local');
 
             $payment = Payment::query()->create([
                 'number' => $this->documentNumberGenerator->generate('payment'),

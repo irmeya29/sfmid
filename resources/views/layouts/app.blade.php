@@ -156,8 +156,9 @@
             'label' => 'Trésorerie',
             'caption' => 'Recettes automatiques et charges',
             'icon' => 'wallet-cards',
-            'routes' => ['treasury.*', 'expense-categories.*'],
+            'routes' => ['treasury.*', 'expenses.*', 'expense-categories.*'],
             'items' => [
+                ['label' => 'Depenses', 'route' => 'expenses.index', 'icon' => 'receipt-text', 'show' => $can('expenses.view'), 'active' => ['expenses.*']],
                 ['label' => 'Journal de trésorerie', 'route' => 'treasury.index', 'icon' => 'landmark', 'show' => $can('treasury.view'), 'active' => ['treasury.*']],
                 ['label' => 'Catégories charges', 'route' => 'expense-categories.index', 'icon' => 'list-tree', 'show' => $can('expense_categories.view'), 'active' => ['expense-categories.*']],
             ],

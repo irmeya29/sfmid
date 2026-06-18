@@ -23,7 +23,7 @@
                 <div><p class="text-xs font-semibold uppercase text-slate-500">Date</p><p class="font-semibold">{{ $payment->payment_date?->format('d/m/Y') }}</p></div>
                 <div><p class="text-xs font-semibold uppercase text-slate-500">Mode</p><p class="font-semibold">{{ $payment->method }}</p></div>
                 <div><p class="text-xs font-semibold uppercase text-slate-500">Référence</p><p class="font-semibold">{{ $payment->reference ?: 'Non renseignée' }}</p></div>
-                <div><p class="text-xs font-semibold uppercase text-slate-500">Justificatif</p><p class="font-semibold">@if($payment->attachment_path)<a href="{{ asset('storage/'.$payment->attachment_path) }}" target="_blank">Ouvrir</a>@else Aucun @endif</p></div>
+                <div><p class="text-xs font-semibold uppercase text-slate-500">Justificatif</p><p class="font-semibold">@if($payment->attachment_path)<a href="{{ route('payments.attachment', $payment) }}" target="_blank">Ouvrir</a>@else Aucun @endif</p></div>
             </div>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

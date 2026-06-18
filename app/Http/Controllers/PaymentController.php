@@ -13,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -81,6 +82,23 @@ class PaymentController extends Controller
         $payment->load(['invoice.client', 'invoice.payments', 'creator', 'validator', 'rejector', 'validationHistories.user']);
 
         return view('payments.show', compact('payment'));
+    }
+
+    public function attachment(Payment $payment): Response
+    {
+        Gate::authorize('view', $payment);
+
+        abort_if(! $payment->attachment_path, 404);
+
+        $disk = Storage::disk('local')->exists($payment->attachment_path)
+            ? Storage::disk('local')
+            : (Storage::disk('public')->exists($payment->attachment_path) ? Storage::disk('public') : null);
+
+        abort_if($disk === null, 404);
+
+        return response()->file($disk->path($payment->attachment_path), [
+            'Content-Disposition' => 'inline; filename="'.basename($payment->attachment_path).'"',
+        ]);
     }
 
     public function receipt(Payment $payment): Response

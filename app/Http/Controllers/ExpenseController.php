@@ -9,11 +9,14 @@ use App\Http\Requests\UpdateExpenseRequest;
 use App\Models\CompanySetting;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Services\Audit\ActivityLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -73,6 +76,23 @@ class ExpenseController extends Controller
         return view('expenses.show', compact('expense'));
     }
 
+    public function attachment(Expense $expense): Response
+    {
+        Gate::authorize('view', $expense->load('category'));
+
+        abort_if(! $expense->attachment_path, 404);
+
+        $disk = Storage::disk('local')->exists($expense->attachment_path)
+            ? Storage::disk('local')
+            : (Storage::disk('public')->exists($expense->attachment_path) ? Storage::disk('public') : null);
+
+        abort_if($disk === null, 404);
+
+        return response()->file($disk->path($expense->attachment_path), [
+            'Content-Disposition' => 'inline; filename="'.basename($expense->attachment_path).'"',
+        ]);
+    }
+
     public function edit(Request $request, Expense $expense): View
     {
         Gate::authorize('update', $expense->load('category'));
@@ -95,6 +115,35 @@ class ExpenseController extends Controller
         );
 
         return redirect()->route('expenses.show', $expense)->with('success', 'Dépense modifiée avec succès.');
+    }
+
+    public function destroy(Expense $expense, ActivityLogger $activityLogger): RedirectResponse
+    {
+        Gate::authorize('delete', $expense->load('category'));
+
+        DB::transaction(function () use ($expense, $activityLogger): void {
+            $oldValues = $expense->only(['number', 'status', 'amount', 'expense_category_id', 'beneficiary']);
+            $attachmentPath = $expense->attachment_path;
+
+            $activityLogger->log(
+                action: 'deleted',
+                module: 'expenses',
+                description: "Depense {$expense->number} supprimee.",
+                subject: $expense,
+                oldValues: $oldValues,
+            );
+
+            $expense->delete();
+
+            if ($attachmentPath) {
+                Storage::disk('local')->delete($attachmentPath);
+                Storage::disk('public')->delete($attachmentPath);
+            }
+        });
+
+        return redirect()
+            ->route('expenses.index')
+            ->with('success', 'Depense supprimee avec succes.');
     }
 
     public function pdf(Request $request): Response

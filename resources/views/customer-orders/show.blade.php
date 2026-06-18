@@ -30,6 +30,7 @@
                 <div><p class="text-xs uppercase text-slate-500">Code</p><p class="font-semibold">{{ $customerOrder->client?->code }}</p></div>
                 <div><p class="text-xs uppercase text-slate-500">Date BC</p><p class="font-semibold">{{ $customerOrder->order_date?->format('d/m/Y') }}</p></div>
                 <div><p class="text-xs uppercase text-slate-500">Source</p><p class="font-semibold">{{ $customerOrder->proforma?->number ?: 'Creation independante' }}</p></div>
+                <div><p class="text-xs uppercase text-slate-500">Piece jointe</p><p class="font-semibold">@if($customerOrder->attachment_path)<a href="{{ route('customer-orders.attachment', $customerOrder) }}" target="_blank">Ouvrir</a>@else Aucune @endif</p></div>
             </div>
         </x-card>
         <x-card>

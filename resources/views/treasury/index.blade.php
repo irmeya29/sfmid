@@ -56,23 +56,53 @@
 
             <form method="POST" action="{{ route('treasury.expenses.store') }}" enctype="multipart/form-data" class="mt-5 grid gap-4 lg:grid-cols-3">
                 @csrf
-                <select name="expense_category_id" required class="rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                    <option value="">Categorie</option>
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}" @selected((int) old('expense_category_id') === $category->id)>{{ $category->name }}</option>
-                    @endforeach
-                </select>
-                <input type="number" step="0.01" name="amount" value="{{ old('amount') }}" placeholder="Montant" required class="rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                <input type="date" name="expense_date" value="{{ old('expense_date', now()->toDateString()) }}" required class="rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                <select name="payment_method" required class="rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                    @foreach($paymentModes as $mode)
-                        <option value="{{ $mode->code }}" @selected(old('payment_method') === $mode->code)>{{ $mode->name }}</option>
-                    @endforeach
-                </select>
-                <input name="beneficiary" value="{{ old('beneficiary') }}" placeholder="Beneficiaire" class="rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                <input type="file" name="attachment" class="rounded-xl border border-slate-300 px-4 py-3 text-sm">
-                <textarea name="description" rows="3" placeholder="Description" required class="rounded-xl border border-slate-300 px-4 py-3 text-sm lg:col-span-2">{{ old('description') }}</textarea>
-                <x-button type="submit" icon="save">Enregistrer la transaction</x-button>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Categorie</label>
+                    <select name="expense_category_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                        <option value="">Selectionner</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}" @selected((int) old('expense_category_id') === $category->id)>{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('expense_category_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Montant</label>
+                    <input type="number" step="0.01" min="1" name="amount" value="{{ old('amount') }}" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                    @error('amount')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Date</label>
+                    <input type="date" name="expense_date" value="{{ old('expense_date', now()->toDateString()) }}" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                    @error('expense_date')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Mode paiement</label>
+                    <select name="payment_method" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                        @foreach($paymentModes as $mode)
+                            <option value="{{ $mode->code }}" @selected(old('payment_method') === $mode->code)>{{ $mode->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('payment_method')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Beneficiaire</label>
+                    <input name="beneficiary" value="{{ old('beneficiary') }}" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">
+                    @error('beneficiary')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Justificatif</label>
+                    <input type="file" name="attachment" accept="application/pdf,image/*,.tif,.tiff,.bmp" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-bold file:text-slate-700">
+                    @error('attachment')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Description</label>
+                    <textarea name="description" rows="3" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm">{{ old('description') }}</textarea>
+                    @error('description')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div class="flex items-end">
+                    <x-button type="submit" icon="save" class="w-full">Enregistrer</x-button>
+                </div>
             </form>
         </section>
     @endif

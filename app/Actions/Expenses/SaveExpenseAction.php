@@ -12,6 +12,7 @@ use App\Services\Numbering\DocumentNumberGenerator;
 use App\Services\Validation\ValidationHistoryLogger;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class SaveExpenseAction
@@ -65,7 +66,8 @@ class SaveExpenseAction
                 ]);
             }
 
-            $attachmentPath = $attachment?->store('expense-attachments', 'public') ?? $expense->attachment_path;
+            $oldAttachmentPath = $expense->attachment_path;
+            $attachmentPath = $attachment?->store('expense-attachments', 'local') ?? $oldAttachmentPath;
             $newStatus = $isUpdate && $fromStatus === ExpenseStatus::Rejected
                 ? ExpenseStatus::Corrected
                 : $expense->status;
@@ -81,6 +83,11 @@ class SaveExpenseAction
                 'attachment_path' => $attachmentPath,
                 'description' => $data['description'],
             ])->save();
+
+            if ($attachment !== null && $oldAttachmentPath && $oldAttachmentPath !== $attachmentPath) {
+                Storage::disk('local')->delete($oldAttachmentPath);
+                Storage::disk('public')->delete($oldAttachmentPath);
+            }
 
             if ($isUpdate && $fromStatus === ExpenseStatus::Rejected) {
                 $this->validationHistoryLogger->log(
