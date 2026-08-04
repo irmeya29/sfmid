@@ -12,6 +12,7 @@ class ProformaItem extends Model
 
     protected $fillable = [
         'proforma_id',
+        'item_type',
         'product_id',
         'product_code',
         'product_internal_reference',

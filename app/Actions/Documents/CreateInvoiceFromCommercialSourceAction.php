@@ -88,6 +88,7 @@ class CreateInvoiceFromCommercialSourceAction
             foreach ($items as $item) {
                 $invoice->items()->create([
                     'delivery_note_item_id' => null,
+                    'item_type' => $item->item_type ?? 'product',
                     'product_id' => $item->product_id,
                     'product_code' => $item->product_code,
                     'product_internal_reference' => $item->product_internal_reference,

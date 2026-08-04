@@ -147,10 +147,18 @@
                     @foreach($oldItems as $index => $item)
                         <tr class="item-row">
                             <td class="px-3 py-3">
+                                <select name="items[{{ $index }}][item_type]" class="item-type-select mb-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                                    <option value="product" @selected(($item['item_type'] ?? 'product') !== 'service')>Produit</option>
+                                    <option value="service" @selected(($item['item_type'] ?? 'product') === 'service')>Prestation</option>
+                                </select>
                                 <div class="relative">
                                 <input type="hidden" class="product-id-input" name="items[{{ $index }}][product_id]" value="{{ $item['product_id'] ?? '' }}">
                                 <input type="text" class="product-search w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Rechercher article..." autocomplete="off">
                                 <div class="product-results hidden"></div>
+                                </div>
+                                <div class="service-fields mt-2 hidden grid gap-2 sm:grid-cols-[1fr_7rem]">
+                                    <input type="text" name="items[{{ $index }}][product_name]" value="{{ $item['product_name'] ?? '' }}" class="service-name-input rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Designation prestation">
+                                    <input type="text" name="items[{{ $index }}][unit]" value="{{ $item['unit'] ?? 'service' }}" class="service-unit-input rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Unite">
                                 </div>
                                 <p class="product-label mt-2 text-xs text-slate-500"></p>
                             </td>
@@ -257,8 +265,12 @@ function selectProduct(row, selectedProduct, forcePrice = true) {
 }
 
 function refreshRow(row) {
+    const isService = row.querySelector('.item-type-select')?.value === 'service';
+    if (isService) {
+        row.querySelector('.stock-warning')?.classList.add('hidden');
+    }
     const selectedProduct = product(row.querySelector('.product-id-input').value);
-    if (selectedProduct) {
+    if (selectedProduct && !isService) {
         const warning = row.querySelector('.stock-warning');
         const quantity = Number(row.querySelector('.quantity-input').value || 0);
         warning.classList.toggle('hidden', quantity <= Number(selectedProduct.physical_stock || 0));
@@ -300,15 +312,30 @@ function refreshTotals() {
 
 function reindex() {
     body.querySelectorAll('.item-row').forEach((row, index) => {
-        row.querySelectorAll('input').forEach(input => {
+        row.querySelectorAll('input, select').forEach(input => {
             if (input.name) input.name = input.name.replace(/items\[\d+]/, `items[${index}]`);
         });
     });
 }
 
+function toggleRowType(row) {
+    const isService = row.querySelector('.item-type-select').value === 'service';
+    row.querySelector('.product-search').classList.toggle('hidden', isService);
+    row.querySelector('.service-fields').classList.toggle('hidden', !isService);
+    row.querySelector('.product-label').textContent = isService ? 'Prestation de service sans mouvement de stock.' : row.querySelector('.product-label').textContent;
+    if (isService) {
+        row.querySelector('.product-id-input').value = '';
+        row.querySelector('.client-ref').textContent = 'SERVICE';
+        row.querySelector('.internal-ref').textContent = 'Sans stock';
+    }
+    refreshRow(row);
+}
+
 function bind(row) {
     const search = row.querySelector('.product-search');
     const results = row.querySelector('.product-results');
+    row.querySelector('.item-type-select').addEventListener('change', () => toggleRowType(row));
+    row.querySelectorAll('.service-name-input,.service-unit-input').forEach(input => input.addEventListener('input', () => refreshRow(row)));
     search.addEventListener('input', () => {
         const matches = searchProducts(search.value);
         results.innerHTML = matches.length
@@ -328,6 +355,7 @@ function bind(row) {
     });
     const selectedProduct = product(row.querySelector('.product-id-input').value);
     if (selectedProduct) selectProduct(row, selectedProduct, false);
+    toggleRowType(row);
     refreshRow(row);
 }
 
@@ -339,6 +367,9 @@ document.getElementById('add-line').addEventListener('click', () => {
     clone.querySelector('.product-label').textContent = '';
     clone.querySelector('.client-ref').textContent = '-';
     clone.querySelector('.internal-ref').textContent = 'Ref SFMID : -';
+    clone.querySelector('.item-type-select').value = 'product';
+    clone.querySelector('.service-fields').classList.add('hidden');
+    clone.querySelector('.product-search').classList.remove('hidden');
     body.appendChild(clone);
     reindex();
     bind(clone);

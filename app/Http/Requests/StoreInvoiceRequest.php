@@ -41,7 +41,10 @@ class StoreInvoiceRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:2000'],
 
             'items' => ['required_if:source_type,direct', 'array', 'min:1'],
-            'items.*.product_id' => ['required_if:source_type,direct', 'nullable', 'integer', 'distinct', 'exists:products,id'],
+            'items.*.item_type' => ['nullable', Rule::in(['product', 'service'])],
+            'items.*.product_id' => ['required_if:items.*.item_type,product', 'nullable', 'integer', 'exists:products,id'],
+            'items.*.product_name' => ['required_if:items.*.item_type,service', 'nullable', 'string', 'max:255'],
+            'items.*.unit' => ['required_if:items.*.item_type,service', 'nullable', 'string', 'max:50'],
             'items.*.quantity' => ['required_if:source_type,direct', 'nullable', 'numeric', 'min:0.001'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],

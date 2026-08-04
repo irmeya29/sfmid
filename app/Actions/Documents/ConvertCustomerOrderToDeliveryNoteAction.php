@@ -63,6 +63,7 @@ class ConvertCustomerOrderToDeliveryNoteAction
             foreach ($customerOrder->items as $item) {
                 $deliveryNote->items()->create([
                     'proforma_item_id' => $item->proforma_item_id,
+                    'item_type' => $item->item_type ?? 'product',
                     'product_id' => $item->product_id,
                     'product_code' => $item->product_code,
                     'product_internal_reference' => $item->product_internal_reference,

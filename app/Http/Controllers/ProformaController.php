@@ -67,7 +67,10 @@ class ProformaController extends Controller
             'company' => $company,
             'lineItems' => [
                 [
+                    'item_type' => 'product',
                     'product_id' => '',
+                    'product_name' => '',
+                    'unit' => 'service',
                     'quantity' => 1,
                     'unit_price' => 0,
                     'discount_rate' => 0,
@@ -121,7 +124,10 @@ class ProformaController extends Controller
             'products' => Product::query()->with('clientPrices')->active()->commercial()->orderBy('name')->get(),
             'company' => CompanySetting::query()->pluck('value', 'key')->all(),
             'lineItems' => $proforma->items->map(fn ($item): array => [
+                'item_type' => $item->item_type ?? 'product',
                 'product_id' => $item->product_id,
+                'product_name' => $item->product_name,
+                'unit' => $item->unit,
                 'quantity' => (float) $item->quantity,
                 'unit_price' => (float) $item->unit_price,
                 'discount_rate' => (float) $item->discount_rate,

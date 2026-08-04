@@ -117,12 +117,20 @@
                     @foreach($oldItems as $index => $item)
                         <tr class="item-row">
                             <td class="px-4 py-3">
+                                <select name="items[{{ $index }}][item_type]" class="item-type-select mb-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                                    <option value="product" @selected(($item['item_type'] ?? 'product') !== 'service')>Produit</option>
+                                    <option value="service" @selected(($item['item_type'] ?? 'product') === 'service')>Prestation</option>
+                                </select>
                                 <select name="items[{{ $index }}][product_id]" class="product-select w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" required>
                                     <option value="">Sélectionner</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}" @selected((string) ($item['product_id'] ?? '') === (string) $product->id)>{{ $product->code }} - {{ $product->name }}</option>
                                     @endforeach
                                 </select>
+                                <div class="service-fields mt-2 hidden grid gap-2 sm:grid-cols-[1fr_7rem]">
+                                    <input type="text" name="items[{{ $index }}][product_name]" value="{{ $item['product_name'] ?? '' }}" class="service-name-input rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Designation prestation">
+                                    <input type="text" name="items[{{ $index }}][unit]" value="{{ $item['unit'] ?? 'service' }}" class="service-unit-input rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Unite">
+                                </div>
                                 @error("items.$index.product_id") <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
                             </td>
                             <td class="px-4 py-3 text-right">
@@ -225,6 +233,7 @@
         });
     }
     function refreshRow(row) {
+        const isService = row.querySelector('.item-type-select')?.value === 'service';
         const product = findProduct(row.querySelector('.product-select').value);
         const qtyInput = row.querySelector('.quantity-input');
         const deliveredInput = row.querySelector('.delivered-quantity-input');
@@ -232,13 +241,13 @@
         const discountInput = row.querySelector('.discount-input');
         const stockWarning = row.querySelector('.stock-warning');
 
-        if (product) {
+        if (product && !isService) {
             row.querySelector('.physical-stock').textContent = quantity(productPhysicalStock(product));
             if (!priceInput.value || Number(priceInput.value) <= 0) {
                 priceInput.value = product.sale_price;
             }
         } else {
-            row.querySelector('.physical-stock').textContent = '0';
+            row.querySelector('.physical-stock').textContent = isService ? '-' : '0';
         }
 
         if (!deliveredInput.value) {
@@ -249,7 +258,7 @@
         const price = Number(priceInput.value || 0);
         const discount = Number(discountInput.value || 0);
 
-        if (product && deliveredQty > productPhysicalStock(product)) {
+        if (product && !isService && deliveredQty > productPhysicalStock(product)) {
             stockWarning.textContent = 'Quantité livrée supérieure au stock physique du site.';
             stockWarning.classList.remove('hidden');
         } else {
@@ -279,12 +288,26 @@
             input.addEventListener('change', () => refreshRow(row));
             input.addEventListener('input', () => refreshRow(row));
         });
+        row.querySelector('.item-type-select').addEventListener('change', () => toggleRowType(row));
         row.querySelector('.remove-line').addEventListener('click', () => {
             if (body.querySelectorAll('.item-row').length === 1) return;
             row.remove();
             reindexRows();
             refreshTotals();
         });
+        toggleRowType(row);
+    }
+    function toggleRowType(row) {
+        const isService = row.querySelector('.item-type-select').value === 'service';
+        row.querySelector('.product-select').classList.toggle('hidden', isService);
+        row.querySelector('.service-fields').classList.toggle('hidden', !isService);
+        row.querySelector('.product-select').required = !isService;
+        if (isService) {
+            row.querySelector('.product-select').value = '';
+            row.querySelector('.physical-stock').textContent = '-';
+            row.querySelector('.stock-warning').textContent = '';
+            row.querySelector('.stock-warning').classList.add('hidden');
+        }
         refreshRow(row);
     }
     function addLine() {
@@ -293,6 +316,9 @@
             input.value = input.classList.contains('quantity-input') || input.classList.contains('delivered-quantity-input') ? 1 : 0;
         });
         clone.querySelector('.product-select').value = '';
+        clone.querySelector('.item-type-select').value = 'product';
+        clone.querySelector('.product-select').classList.remove('hidden');
+        clone.querySelector('.service-fields').classList.add('hidden');
         clone.querySelector('.physical-stock').textContent = '0';
         clone.querySelector('.line-total').textContent = '0 FCFA';
         clone.querySelector('.stock-warning').textContent = '';

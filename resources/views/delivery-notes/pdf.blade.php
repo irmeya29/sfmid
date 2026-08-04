@@ -75,7 +75,7 @@
             <tbody>
                 @foreach($deliveryNote->items as $item)
                     <tr>
-                        <td class="ref">{{ $item->client_product_reference ?: $item->product_code }}</td>
+                        <td class="ref">{{ ($item->item_type ?? 'product') === 'service' ? 'Prestation' : ($item->client_product_reference ?: $item->product_code) }}</td>
                         <td class="name">{{ $item->product_name }}</td>
                         <td class="right">{{ $qty($item->quantity) }}</td>
                         <td class="right">{{ $qty($item->delivered_quantity) }}</td>

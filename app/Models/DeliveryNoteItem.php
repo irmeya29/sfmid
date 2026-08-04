@@ -14,6 +14,7 @@ class DeliveryNoteItem extends Model
     protected $fillable = [
         'delivery_note_id',
         'proforma_item_id',
+        'item_type',
         'product_id',
         'product_code',
         'product_internal_reference',

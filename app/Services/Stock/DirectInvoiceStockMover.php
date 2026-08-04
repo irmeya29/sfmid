@@ -33,6 +33,10 @@ class DirectInvoiceStockMover
         $invoice->loadMissing('items');
 
         foreach ($invoice->items as $item) {
+            if ($item->item_type === 'service' || $item->product_id === null) {
+                continue;
+            }
+
             $product = Product::query()
                 ->whereKey($item->product_id)
                 ->lockForUpdate()

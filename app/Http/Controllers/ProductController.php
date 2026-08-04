@@ -18,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use SplFileObject;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -744,7 +745,8 @@ class ProductController extends Controller
     {
         return array_map(
             function ($header): string {
-                $normalized = trim(mb_strtolower((string) $header), " \t\n\r\0\x0B\xEF\xBB\xBF");
+                $normalized = trim(mb_strtolower($this->normalizeCsvCell($header)), " \t\n\r\0\x0B\xEF\xBB\xBF");
+                $normalized = Str::ascii($normalized);
                 $normalized = str_replace(["'", '’', '-', '_'], [' ', ' ', ' ', ' '], $normalized);
                 $normalized = preg_replace('/\s+/', ' ', $normalized) ?: $normalized;
 
@@ -760,11 +762,34 @@ class ProductController extends Controller
 
         foreach (self::CSV_HEADERS as $header) {
             $data[$header] = isset($headerIndexes[$header])
-                ? trim((string) ($row[$headerIndexes[$header]] ?? ''))
+                ? trim($this->normalizeCsvCell($row[$headerIndexes[$header]] ?? ''))
                 : '';
         }
 
         return $data;
+    }
+
+    private function normalizeCsvCell(mixed $value): string
+    {
+        $value = (string) $value;
+
+        if (str_starts_with($value, "\xEF\xBB\xBF")) {
+            $value = substr($value, 3);
+        }
+
+        if (mb_check_encoding($value, 'UTF-8')) {
+            return $value;
+        }
+
+        foreach (['Windows-1252', 'ISO-8859-1'] as $encoding) {
+            $converted = @mb_convert_encoding($value, 'UTF-8', $encoding);
+
+            if (is_string($converted) && mb_check_encoding($converted, 'UTF-8')) {
+                return $converted;
+            }
+        }
+
+        return mb_convert_encoding($value, 'UTF-8', 'UTF-8');
     }
 
     private function isEmptyCsvRow(mixed $row): bool
@@ -922,7 +947,7 @@ class ProductController extends Controller
 
     private function normalizeImportStockKind(mixed $value): string
     {
-        $normalized = mb_strtolower(trim((string) $value));
+        $normalized = Str::ascii(mb_strtolower(trim($this->normalizeCsvCell($value))));
 
         return match ($normalized) {
             '', 'commercial', 'stock commercial' => ProductStockKind::Commercial->value,
@@ -933,7 +958,7 @@ class ProductController extends Controller
 
     private function normalizeImportStatus(mixed $value): string
     {
-        $normalized = mb_strtolower(trim((string) $value));
+        $normalized = Str::ascii(mb_strtolower(trim($this->normalizeCsvCell($value))));
 
         return match ($normalized) {
             '', 'active', 'actif' => ProductStatus::Active->value,

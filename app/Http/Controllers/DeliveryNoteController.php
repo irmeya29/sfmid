@@ -64,7 +64,10 @@ class DeliveryNoteController extends Controller
             'stockSites' => StockSite::query()->active()->sellable()->orderBy('name')->get(),
             'lineItems' => [
                 [
+                    'item_type' => 'product',
                     'product_id' => '',
+                    'product_name' => '',
+                    'unit' => 'service',
                     'quantity' => 1,
                     'delivered_quantity' => 1,
                     'unit_price' => 0,
@@ -124,7 +127,10 @@ class DeliveryNoteController extends Controller
             'products' => Product::query()->with('stockSiteStocks')->active()->commercial()->orderBy('name')->get(),
             'stockSites' => StockSite::query()->active()->sellable()->orderBy('name')->get(),
             'lineItems' => $deliveryNote->items->map(fn ($item): array => [
+                'item_type' => $item->item_type ?? 'product',
                 'product_id' => $item->product_id,
+                'product_name' => $item->product_name,
+                'unit' => $item->unit,
                 'quantity' => (float) $item->quantity,
                 'delivered_quantity' => (float) $item->delivered_quantity,
                 'unit_price' => (float) $item->unit_price,

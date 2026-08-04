@@ -82,7 +82,10 @@ class InvoiceController extends Controller
             'company' => CompanySetting::query()->pluck('value', 'key')->all(),
             'lineItems' => [
                 [
+                    'item_type' => 'product',
                     'product_id' => '',
+                    'product_name' => '',
+                    'unit' => 'service',
                     'quantity' => 1,
                     'unit_price' => 0,
                     'discount_amount' => 0,

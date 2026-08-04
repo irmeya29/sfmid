@@ -58,6 +58,7 @@ class ConvertProformaToCustomerOrderAction
             foreach ($proforma->items as $item) {
                 $order->items()->create([
                     'proforma_item_id' => $item->id,
+                    'item_type' => $item->item_type ?? 'product',
                     'product_id' => $item->product_id,
                     'product_code' => $item->product_code,
                     'product_internal_reference' => $item->product_internal_reference,

@@ -49,7 +49,10 @@ class StoreDeliveryNoteRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:2000'],
 
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
+            'items.*.item_type' => ['nullable', Rule::in(['product', 'service'])],
+            'items.*.product_id' => ['required_if:items.*.item_type,product', 'nullable', 'integer', 'exists:products,id'],
+            'items.*.product_name' => ['required_if:items.*.item_type,service', 'nullable', 'string', 'max:255'],
+            'items.*.unit' => ['required_if:items.*.item_type,service', 'nullable', 'string', 'max:50'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
             'items.*.delivered_quantity' => ['nullable', 'numeric', 'min:0.001', 'lte:items.*.quantity'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],

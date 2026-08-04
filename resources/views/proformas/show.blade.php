@@ -159,8 +159,8 @@
                     @foreach($proforma->items as $item)
                         <tr>
                             <td class="px-5 py-4">
-                                <p class="font-semibold text-slate-950">{{ $item->client_product_reference ?: ($item->product_internal_reference ?: $item->product_code) }}</p>
-                                <p class="text-xs text-slate-500">SFMID : {{ $item->product_internal_reference ?: $item->product_code }}</p>
+                                <p class="font-semibold text-slate-950">{{ ($item->item_type ?? 'product') === 'service' ? 'Prestation' : ($item->client_product_reference ?: ($item->product_internal_reference ?: $item->product_code)) }}</p>
+                                <p class="text-xs text-slate-500">{{ ($item->item_type ?? 'product') === 'service' ? 'Sans stock' : ('SFMID : '.($item->product_internal_reference ?: $item->product_code)) }}</p>
                             </td>
                             <td class="px-5 py-4">
                                 <p class="font-semibold text-slate-950">{{ $item->product_name }}</p>

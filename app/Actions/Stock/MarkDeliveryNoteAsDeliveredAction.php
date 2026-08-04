@@ -67,6 +67,10 @@ class MarkDeliveryNoteAsDeliveredAction
             $stockSiteId = (int) ($deliveryNote->stock_site_id ?: $this->inventory->salesSite()->id);
 
             foreach ($deliveryNote->items as $item) {
+                if ($item->item_type === 'service' || $item->product_id === null) {
+                    continue;
+                }
+
                 $quantity = (float) $item->delivered_quantity;
 
                 if ($quantity <= 0) {

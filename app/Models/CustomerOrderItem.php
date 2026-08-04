@@ -13,6 +13,7 @@ class CustomerOrderItem extends Model
     protected $fillable = [
         'customer_order_id',
         'proforma_item_id',
+        'item_type',
         'product_id',
         'product_code',
         'product_internal_reference',

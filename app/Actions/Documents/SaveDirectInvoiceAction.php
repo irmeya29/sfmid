@@ -111,26 +111,44 @@ class SaveDirectInvoiceAction
         $taxTotal = 0;
 
         foreach ($items as $item) {
-            $product = Product::query()->whereKey($item['product_id'])->firstOrFail();
-            $clientReference = ClientProductPrice::query()
-                ->where('client_id', $clientId)
-                ->where('product_id', $product->id)
-                ->first();
+            $itemType = ($item['item_type'] ?? 'product') === 'service' ? 'service' : 'product';
+            $product = null;
+            $clientReference = null;
+
+            if ($itemType === 'product') {
+                if (empty($item['product_id'])) {
+                    throw new RuntimeException('Produit obligatoire sur une ligne produit.');
+                }
+
+                $product = Product::query()->whereKey($item['product_id'] ?? null)->firstOrFail();
+                $clientReference = ClientProductPrice::query()
+                    ->where('client_id', $clientId)
+                    ->where('product_id', $product->id)
+                    ->first();
+            }
             $quantity = (float) $item['quantity'];
             $unitPrice = isset($item['unit_price']) && (float) $item['unit_price'] > 0
                 ? (float) $item['unit_price']
-                : (float) $product->sale_price;
+                : (float) ($product?->sale_price ?? 0);
             $discountAmount = isset($item['discount_amount']) ? (float) $item['discount_amount'] : 0;
+            $itemName = $itemType === 'service'
+                ? trim((string) ($item['product_name'] ?? ''))
+                : $product->name;
+
+            if ($itemName === '') {
+                throw new RuntimeException('Designation prestation obligatoire.');
+            }
+
             if ($quantity <= 0) {
-                throw new RuntimeException("Quantité invalide pour {$product->name}.");
+                throw new RuntimeException("Quantité invalide pour {$itemName}.");
             }
 
             if ($discountAmount < 0 || $discountAmount > ($quantity * $unitPrice)) {
-                throw new RuntimeException("Remise invalide pour {$product->name}.");
+                throw new RuntimeException("Remise invalide pour {$itemName}.");
             }
 
             if ($taxRate < 0 || $taxRate > 100) {
-                throw new RuntimeException("TVA invalide pour {$product->name}.");
+                throw new RuntimeException("TVA invalide pour {$itemName}.");
             }
 
             $lineSubtotal = $quantity * $unitPrice;
@@ -144,12 +162,13 @@ class SaveDirectInvoiceAction
 
             $preparedItems[] = [
                 'delivery_note_item_id' => null,
-                'product_id' => $product->id,
-                'product_code' => $product->code,
-                'product_internal_reference' => $product->internal_reference,
+                'item_type' => $itemType,
+                'product_id' => $product?->id,
+                'product_code' => $product?->code ?? 'SERVICE',
+                'product_internal_reference' => $product?->internal_reference,
                 'client_product_reference' => $clientReference?->client_reference,
-                'product_name' => $clientReference?->client_designation ?: $product->name,
-                'unit' => $product->unit,
+                'product_name' => $itemType === 'service' ? $itemName : ($clientReference?->client_designation ?: $product->name),
+                'unit' => $itemType === 'service' ? (trim((string) ($item['unit'] ?? '')) ?: 'service') : $product->unit,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'line_subtotal' => $lineSubtotal,
