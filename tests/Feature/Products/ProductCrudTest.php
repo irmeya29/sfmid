@@ -98,6 +98,39 @@ class ProductCrudTest extends TestCase
         ]);
     }
 
+    public function test_product_csv_import_restores_soft_deleted_product_with_same_code(): void
+    {
+        $this->seed(PermissionSeeder::class);
+
+        $product = Product::factory()->create([
+            'code' => 'PRD-RESTORE',
+            'name' => 'Ancien produit',
+            'sale_price' => 1000,
+        ]);
+        $product->delete();
+
+        $csvPath = tempnam(sys_get_temp_dir(), 'products-import-');
+        file_put_contents($csvPath, implode("\n", [
+            'Code produit;Nom du produit;Categorie;Marque;Reference interne SFMID;Reference fournisseur;Description;Unite;Prix achat;Prix vente;Stock physique initial;Stock outil;Seuil alerte;Type de stock;Statut',
+            'PRD-RESTORE;Produit restaure;;;;;;piece;100;2500;5;0;1;Stock commercial;Actif',
+        ]));
+
+        $file = new UploadedFile($csvPath, 'products.csv', 'text/csv', null, true);
+
+        $this->actingAs($this->userWithPermissions(['products.import']))
+            ->post(route('products.import'), ['csv_file' => $file])
+            ->assertRedirect(route('products.import.create'))
+            ->assertSessionHas('import_progress', 100);
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'code' => 'PRD-RESTORE',
+            'name' => 'Produit restaure',
+            'deleted_at' => null,
+        ]);
+        $this->assertSame(1, Product::withTrashed()->where('code', 'PRD-RESTORE')->count());
+    }
+
     public function test_products_can_be_deleted_in_bulk(): void
     {
         $this->seed(PermissionSeeder::class);

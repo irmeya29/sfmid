@@ -265,9 +265,14 @@ class ProductController extends Controller
             ])
             ->filter(fn ($id, $key) => $key !== '')
             ->all();
-        $existingProductIdsByCode = Product::query()
-            ->pluck('id', 'code')
-            ->mapWithKeys(fn ($id, $code) => [mb_strtolower((string) $code) => (int) $id])
+        $existingProductsByCode = Product::withTrashed()
+            ->get(['id', 'code', 'deleted_at'])
+            ->mapWithKeys(fn (Product $product) => [
+                mb_strtolower((string) $product->code) => [
+                    'id' => (int) $product->id,
+                    'deleted_at' => $product->deleted_at,
+                ],
+            ])
             ->all();
         $seenCodes = [];
         $seenCodeLines = [];
@@ -325,12 +330,18 @@ class ProductController extends Controller
             $seenCodes[$normalizedCode] = true;
             $seenCodeLines[$normalizedCode] = $lineNumber;
 
-            if (isset($existingProductIdsByCode[$normalizedCode])) {
+            if (isset($existingProductsByCode[$normalizedCode])) {
                 $updatePayload = $payload;
                 unset($updatePayload['code'], $updatePayload['created_by'], $updatePayload['created_at']);
 
-                Product::query()
-                    ->whereKey($existingProductIdsByCode[$normalizedCode])
+                if ($existingProductsByCode[$normalizedCode]['deleted_at'] !== null) {
+                    Product::withTrashed()
+                        ->whereKey($existingProductsByCode[$normalizedCode]['id'])
+                        ->restore();
+                }
+
+                Product::withTrashed()
+                    ->whereKey($existingProductsByCode[$normalizedCode]['id'])
                     ->update($updatePayload);
 
                 $affectedCodes[] = $code;
