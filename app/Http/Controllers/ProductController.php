@@ -269,6 +269,7 @@ class ProductController extends Controller
             ->mapWithKeys(fn ($id, $code) => [mb_strtolower((string) $code) => (int) $id])
             ->all();
         $seenCodes = [];
+        $seenCodeLines = [];
         $pendingClientReferences = [];
         $affectedCodes = [];
         $now = now();
@@ -310,6 +311,7 @@ class ProductController extends Controller
                 }
 
                 $skipped++;
+                $this->pushImportError($errors, "Ligne {$lineNumber}: code produit en doublon dans le fichier ({$code}), deja traite ligne ".($seenCodeLines[$normalizedCode] ?? 'precedente').'.');
                 continue;
             }
 
@@ -321,6 +323,7 @@ class ProductController extends Controller
             }
 
             $seenCodes[$normalizedCode] = true;
+            $seenCodeLines[$normalizedCode] = $lineNumber;
 
             if (isset($existingProductIdsByCode[$normalizedCode])) {
                 $updatePayload = $payload;

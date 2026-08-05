@@ -111,7 +111,89 @@ class ProformaHttpTest extends TestCase
         $this->assertSoftDeleted($proforma);
     }
 
-    public function test_store_rejects_duplicate_products_and_site_from_another_client(): void
+    public function test_user_can_store_proforma_with_decimal_quantity_using_comma(): void
+    {
+        $this->createSequence('proforma', 'PRO');
+
+        $user = $this->userWithPermissions([
+            'proformas.create',
+        ]);
+
+        $client = Client::factory()->create();
+        $product = Product::factory()->create([
+            'unit' => 'metre',
+            'sale_price' => 10000,
+            'physical_stock' => 10,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('proformas.store'), [
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'subject' => 'Fourniture au metre',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => '1,5',
+                    'unit_price' => 10000,
+                    'discount_rate' => 0,
+                ],
+            ],
+        ]);
+
+        $proforma = Proforma::query()->firstOrFail();
+
+        $response->assertRedirect(route('proformas.show', $proforma));
+        $this->assertDatabaseHas('proforma_items', [
+            'proforma_id' => $proforma->id,
+            'product_id' => $product->id,
+            'quantity' => '1.500',
+            'line_total' => 15000,
+        ]);
+        $this->assertSame('15000.00', $proforma->refresh()->total);
+    }
+
+    public function test_user_can_store_same_product_on_multiple_proforma_lines(): void
+    {
+        $this->createSequence('proforma', 'PRO');
+
+        $user = $this->userWithPermissions([
+            'proformas.create',
+        ]);
+
+        $client = Client::factory()->create();
+        $product = Product::factory()->create([
+            'sale_price' => 10000,
+            'physical_stock' => 10,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('proformas.store'), [
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'subject' => 'Deux lignes meme produit',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 1,
+                    'unit_price' => 10000,
+                    'discount_rate' => 0,
+                ],
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 2,
+                    'unit_price' => 9000,
+                    'discount_rate' => 0,
+                ],
+            ],
+        ]);
+
+        $proforma = Proforma::query()->firstOrFail();
+
+        $response->assertRedirect(route('proformas.show', $proforma));
+        $this->assertSame(2, $proforma->items()->where('product_id', $product->id)->count());
+        $this->assertSame('28000.00', $proforma->refresh()->total);
+    }
+
+    public function test_store_rejects_site_from_another_client(): void
     {
         $user = $this->userWithPermissions([
             'proformas.create',
@@ -147,7 +229,6 @@ class ProformaHttpTest extends TestCase
             ->assertRedirect(route('proformas.create'))
             ->assertSessionHasErrors([
                 'client_delivery_site_id',
-                'items.1.product_id',
             ]);
     }
 

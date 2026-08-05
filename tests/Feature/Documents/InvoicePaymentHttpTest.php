@@ -161,6 +161,44 @@ class InvoicePaymentHttpTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
+    public function test_direct_invoice_can_be_created_with_decimal_quantity_using_comma(): void
+    {
+        $this->sequence('invoice', 'FAC');
+
+        $user = $this->userWithPermissions(['invoices.view', 'invoices.create']);
+        $product = Product::factory()->create([
+            'unit' => 'metre',
+            'physical_stock' => 10,
+            'sale_price' => 8000,
+        ]);
+
+        $this->actingAs($user)->post(route('invoices.store'), [
+            'source_type' => 'direct',
+            'client_id' => \App\Models\Client::factory()->create()->id,
+            'issue_date' => now()->toDateString(),
+            'subject' => 'Facturation au metre',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => '1,5',
+                    'unit_price' => 8000,
+                    'discount_amount' => 0,
+                ],
+            ],
+        ])->assertRedirect();
+
+        $invoice = Invoice::query()->with('items')->firstOrFail();
+
+        $this->assertSame(12000.0, (float) $invoice->subtotal);
+        $this->assertSame(12000.0, (float) $invoice->total);
+        $this->assertDatabaseHas('invoice_items', [
+            'invoice_id' => $invoice->id,
+            'product_id' => $product->id,
+            'quantity' => '1.500',
+            'line_total' => 12000,
+        ]);
+    }
+
     public function test_direct_invoice_can_move_stock_on_validation_when_enabled(): void
     {
         $this->sequence('invoice', 'FAC');

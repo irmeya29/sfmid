@@ -209,7 +209,7 @@
                                         <p class="site-stock font-bold text-slate-700">-</p>
                                         <p class="stock-warning hidden text-xs font-semibold text-amber-700"></p>
                                     </td>
-                                    <td class="px-3 py-3"><input type="number" step="any" min="0.001" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" class="quantity-input w-20 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
+                                    <td class="px-3 py-3"><input type="text" inputmode="decimal" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" class="quantity-input w-20 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
                                     <td class="px-3 py-3"><input type="number" step="0.01" min="0" name="items[{{ $index }}][unit_price]" value="{{ $moneyInput($item['unit_price'] ?? 0) }}" class="price-input w-28 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
                                     <td class="px-3 py-3"><input type="number" step="0.01" min="0" name="items[{{ $index }}][discount_amount]" value="{{ $moneyInput($item['discount_amount'] ?? 0) }}" class="discount-input w-24 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
                                     <td class="px-3 py-3 text-right"><p class="line-total font-bold text-slate-950">0 {{ $currency }}</p><p class="line-detail text-xs text-slate-500"></p></td>
@@ -254,6 +254,7 @@
         const stockSiteSelect = document.getElementById('stock-site-select');
 
         const money = value => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0) + ' ' + currency;
+        const decimal = value => Number(String(value || 0).replace(/\s/g, '').replace(',', '.')) || 0;
         const inputNumber = value => {
             const number = Number(value || 0);
             return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/\.?0+$/, '');
@@ -280,7 +281,7 @@
             const stockDisplay = row.querySelector('.site-stock');
             const warning = row.querySelector('.stock-warning');
             const stock = siteStockForRow(row);
-            const qty = Number(row.querySelector('.quantity-input').value || 0);
+            const qty = decimal(row.querySelector('.quantity-input').value);
 
             if (stock === null || !row.querySelector('.product-id-input').value) {
                 stockDisplay.textContent = '-';
@@ -337,7 +338,7 @@
             let subtotal = 0, discountTotal = 0, taxTotal = 0;
             const taxRate = globalTaxRate();
             body.querySelectorAll('.item-row').forEach(row => {
-                const qty = Number(row.querySelector('.quantity-input').value || 0);
+                const qty = decimal(row.querySelector('.quantity-input').value);
                 const price = Number(row.querySelector('.price-input').value || 0);
                 const discount = Number(row.querySelector('.discount-input').value || 0);
                 const gross = qty * price;

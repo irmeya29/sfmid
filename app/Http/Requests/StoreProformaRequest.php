@@ -12,6 +12,13 @@ class StoreProformaRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'items' => $this->normalizeDecimalQuantities($this->input('items', [])),
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -45,5 +52,22 @@ class StoreProformaRequest extends FormRequest
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
+    }
+
+    private function normalizeDecimalQuantities(array $items): array
+    {
+        foreach ($items as $index => $item) {
+            if (! is_array($item) || ! array_key_exists('quantity', $item)) {
+                continue;
+            }
+
+            $items[$index]['quantity'] = str_replace(
+                [' ', "\u{00A0}", ','],
+                ['', '', '.'],
+                (string) $item['quantity']
+            );
+        }
+
+        return $items;
     }
 }

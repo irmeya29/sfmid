@@ -15,6 +15,10 @@ class UpdateDeliveryNoteRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->merge([
+            'items' => $this->normalizeDecimalQuantities($this->input('items', [])),
+        ]);
+
         if (! $this->filled('stock_site_id')) {
             $this->merge([
                 'stock_site_id' => StockSite::query()
@@ -58,5 +62,28 @@ class UpdateDeliveryNoteRequest extends FormRequest
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
         ];
+    }
+
+    private function normalizeDecimalQuantities(array $items): array
+    {
+        foreach ($items as $index => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            foreach (['quantity', 'delivered_quantity'] as $field) {
+                if (! array_key_exists($field, $item)) {
+                    continue;
+                }
+
+                $items[$index][$field] = str_replace(
+                    [' ', "\u{00A0}", ','],
+                    ['', '', '.'],
+                    (string) $item[$field]
+                );
+            }
+        }
+
+        return $items;
     }
 }

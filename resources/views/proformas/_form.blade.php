@@ -166,7 +166,7 @@
                                 <p class="client-ref text-sm font-semibold text-slate-800">-</p>
                                 <p class="internal-ref text-xs text-slate-500">Ref SFMID : -</p>
                             </td>
-                            <td class="px-3 py-3"><input type="number" step="any" min="0.001" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" class="quantity-input w-20 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm" required><p class="stock-warning mt-1 hidden text-xs text-amber-700"></p></td>
+                            <td class="px-3 py-3"><input type="text" inputmode="decimal" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" class="quantity-input w-20 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm" required><p class="stock-warning mt-1 hidden text-xs text-amber-700"></p></td>
                             <td class="px-3 py-3"><input type="number" step="0.01" min="0" name="items[{{ $index }}][unit_price]" value="{{ $moneyInput($item['unit_price'] ?? 0) }}" class="price-input w-28 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
                             <td class="px-3 py-3"><input type="number" step="0.01" min="0" max="100" name="items[{{ $index }}][discount_rate]" value="{{ $moneyInput($item['discount_rate'] ?? 0) }}" class="discount-input w-20 rounded-xl border border-slate-300 px-3 py-2 text-right text-sm"></td>
                             <td class="px-4 py-3 text-right"><p class="line-total font-semibold text-slate-950">0 {{ $currency }}</p><p class="line-detail text-xs text-slate-500"></p></td>
@@ -207,6 +207,7 @@ const taxRateInput = document.getElementById('global-tax-rate');
 
 const money = value => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0) + ' ' + currency;
 const qty = value => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 3 }).format(value || 0);
+const decimal = value => Number(String(value || 0).replace(/\s/g, '').replace(',', '.')) || 0;
 const inputNumber = value => {
     const number = Number(value || 0);
     return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/\.?0+$/, '');
@@ -272,11 +273,11 @@ function refreshRow(row) {
     const selectedProduct = product(row.querySelector('.product-id-input').value);
     if (selectedProduct && !isService) {
         const warning = row.querySelector('.stock-warning');
-        const quantity = Number(row.querySelector('.quantity-input').value || 0);
+        const quantity = decimal(row.querySelector('.quantity-input').value);
         warning.classList.toggle('hidden', quantity <= Number(selectedProduct.physical_stock || 0));
         warning.textContent = 'Quantite superieure au stock physique.';
     }
-    const quantity = Number(row.querySelector('.quantity-input').value || 0);
+    const quantity = decimal(row.querySelector('.quantity-input').value);
     const price = Number(row.querySelector('.price-input').value || 0);
     const discountRate = Number(row.querySelector('.discount-input').value || 0);
     const taxRate = globalTaxRate();
@@ -294,7 +295,7 @@ function refreshTotals() {
     let gross = 0, discount = 0, tax = 0;
     const taxRate = globalTaxRate();
     body.querySelectorAll('.item-row').forEach(row => {
-        const q = Number(row.querySelector('.quantity-input').value || 0);
+        const q = decimal(row.querySelector('.quantity-input').value);
         const p = Number(row.querySelector('.price-input').value || 0);
         const d = Number(row.querySelector('.discount-input').value || 0);
         const lineGross = q * p;

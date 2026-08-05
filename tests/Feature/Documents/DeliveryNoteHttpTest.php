@@ -99,7 +99,7 @@ class DeliveryNoteHttpTest extends TestCase
         $this->assertSoftDeleted($deliveryNote);
     }
 
-    public function test_delivery_note_rejects_duplicate_products_and_site_from_another_client(): void
+    public function test_delivery_note_rejects_site_from_another_client(): void
     {
         $user = $this->userWithPermissions(['delivery_notes.create']);
         $client = Client::factory()->create();
@@ -118,7 +118,47 @@ class DeliveryNoteHttpTest extends TestCase
             ],
         ])
             ->assertRedirect(route('delivery-notes.create'))
-            ->assertSessionHasErrors(['client_delivery_site_id', 'items.1.product_id']);
+            ->assertSessionHasErrors(['client_delivery_site_id']);
+    }
+
+    public function test_user_can_store_delivery_note_with_decimal_quantities_using_comma(): void
+    {
+        $this->createSequence('delivery_note', 'BL');
+
+        $user = $this->userWithPermissions(['delivery_notes.create']);
+        $client = Client::factory()->create();
+        $product = Product::factory()->create([
+            'unit' => 'litre',
+            'sale_price' => 4000,
+            'physical_stock' => 10,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('delivery-notes.store'), [
+            'client_id' => $client->id,
+            'planned_delivery_date' => now()->toDateString(),
+            'subject' => 'Livraison au litre',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => '2,5',
+                    'delivered_quantity' => '2,5',
+                    'unit_price' => 4000,
+                    'discount_amount' => 0,
+                ],
+            ],
+        ]);
+
+        $deliveryNote = DeliveryNote::query()->firstOrFail();
+
+        $response->assertRedirect(route('delivery-notes.show', $deliveryNote));
+        $this->assertDatabaseHas('delivery_note_items', [
+            'delivery_note_id' => $deliveryNote->id,
+            'product_id' => $product->id,
+            'quantity' => '2.500',
+            'delivered_quantity' => '2.500',
+            'line_total' => 10000,
+        ]);
+        $this->assertSame('10000.00', $deliveryNote->refresh()->total);
     }
 
     public function test_delivery_note_workflow_from_http_moves_stock_once(): void

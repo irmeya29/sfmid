@@ -138,11 +138,11 @@
                                 <p class="stock-warning mt-2 hidden text-xs font-semibold text-amber-700"></p>
                             </td>
                             <td class="px-4 py-3">
-                                <input type="number" step="any" min="0.001" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" class="quantity-input w-full rounded-xl border border-slate-300 px-3 py-2 text-right text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" required>
+                                <input type="text" inputmode="decimal" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}" class="quantity-input w-full rounded-xl border border-slate-300 px-3 py-2 text-right text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" required>
                                 @error("items.$index.quantity") <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
                             </td>
                             <td class="px-4 py-3">
-                                <input type="number" step="any" min="0.001" name="items[{{ $index }}][delivered_quantity]" value="{{ $item['delivered_quantity'] ?? ($item['quantity'] ?? 1) }}" class="delivered-quantity-input w-full rounded-xl border border-slate-300 px-3 py-2 text-right text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                                <input type="text" inputmode="decimal" name="items[{{ $index }}][delivered_quantity]" value="{{ $item['delivered_quantity'] ?? ($item['quantity'] ?? 1) }}" class="delivered-quantity-input w-full rounded-xl border border-slate-300 px-3 py-2 text-right text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
                                 @error("items.$index.delivered_quantity") <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
                             </td>
                             <td class="hidden">
@@ -191,6 +191,9 @@
     }
     function quantity(value) {
         return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 3 }).format(value || 0);
+    }
+    function decimal(value) {
+        return Number(String(value || 0).replace(/\s/g, '').replace(',', '.')) || 0;
     }
     function findProduct(id) {
         return products.find(product => String(product.id) === String(id));
@@ -254,7 +257,7 @@
             deliveredInput.value = qtyInput.value || 1;
         }
 
-        const deliveredQty = Number(deliveredInput.value || 0);
+        const deliveredQty = decimal(deliveredInput.value);
         const price = Number(priceInput.value || 0);
         const discount = Number(discountInput.value || 0);
 
@@ -266,14 +269,14 @@
             stockWarning.classList.add('hidden');
         }
 
-        row.querySelector('.line-total').textContent = money((Number(qtyInput.value || 0) * price) - discount);
+        row.querySelector('.line-total').textContent = money((decimal(qtyInput.value) * price) - discount);
         refreshTotals();
     }
     function refreshTotals() {
         let subtotal = 0;
         let discountTotal = 0;
         body.querySelectorAll('.item-row').forEach(row => {
-            const qty = Number(row.querySelector('.quantity-input').value || 0);
+            const qty = decimal(row.querySelector('.quantity-input').value);
             const price = Number(row.querySelector('.price-input').value || 0);
             const discount = Number(row.querySelector('.discount-input').value || 0);
             subtotal += qty * price;

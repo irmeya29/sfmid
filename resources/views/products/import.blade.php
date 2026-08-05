@@ -21,7 +21,7 @@
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">Fichier CSV produits</label>
                     <input id="csv-file" type="file" name="csv_file" accept=".csv,text/csv,text/plain" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-[#2676B3] focus:ring-2 focus:ring-[#2676B3]/10">
-                    <p class="mt-2 text-xs text-slate-500">Le code produit est obligatoire. Les codes deja existants ou repetes dans le fichier sont ignores.</p>
+                    <p class="mt-2 text-xs text-slate-500">Le code produit est obligatoire. Les produits deja existants sont modifies, les doublons du fichier sont expliques apres import.</p>
                     @error('csv_file')
                         <p class="mt-2 text-xs font-semibold text-red-600">{{ $message }}</p>
                     @enderror
