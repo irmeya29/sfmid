@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use SplFileObject;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class ProductController extends Controller
 {
@@ -273,7 +274,6 @@ class ProductController extends Controller
         $pendingClientReferences = [];
         $affectedCodes = [];
         $now = now();
-        $chunk = [];
         $lineNumber = 1;
         $created = 0;
         $updated = 0;
@@ -347,8 +347,16 @@ class ProductController extends Controller
                 continue;
             }
 
-            $chunk[] = $payload;
+            try {
+                Product::query()->create($payload);
+            } catch (Throwable $exception) {
+                $skipped++;
+                $this->pushImportError($errors, "Ligne {$lineNumber}: creation impossible pour {$code} (".Str::limit($exception->getMessage(), 180).').');
+                continue;
+            }
+
             $affectedCodes[] = $code;
+            $created++;
 
             if ($this->hasClientReferenceImportData($rowData)) {
                 $pendingClientReferences[] = [
@@ -357,15 +365,6 @@ class ProductController extends Controller
                     'data' => $rowData,
                 ];
             }
-
-            if (count($chunk) >= 500) {
-                $created += Product::query()->insertOrIgnore($chunk);
-                $chunk = [];
-            }
-        }
-
-        if ($chunk !== []) {
-            $created += Product::query()->insertOrIgnore($chunk);
         }
 
         Product::query()
