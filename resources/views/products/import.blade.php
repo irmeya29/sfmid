@@ -41,6 +41,17 @@
             </div>
         </form>
 
+        @if(session('import_details'))
+            <div class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                <p class="font-semibold">Detail de l'import reussi :</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    @foreach(session('import_details') as $detail)
+                        <li>{{ $detail }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         @if(session('import_errors'))
             <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                 <p class="font-semibold">Certaines lignes ont ete ignorees :</p>

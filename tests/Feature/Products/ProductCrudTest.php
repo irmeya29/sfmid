@@ -70,7 +70,8 @@ class ProductCrudTest extends TestCase
         $this->actingAs($this->userWithPermissions(['products.import']))
             ->post(route('products.import'), ['csv_file' => $file])
             ->assertRedirect(route('products.import.create'))
-            ->assertSessionHas('import_progress', 100);
+            ->assertSessionHas('import_progress', 100)
+            ->assertSessionHas('import_details');
 
         $this->assertDatabaseHas('products', [
             'code' => 'PRD-NEW-001',
@@ -120,7 +121,8 @@ class ProductCrudTest extends TestCase
         $this->actingAs($this->userWithPermissions(['products.import']))
             ->post(route('products.import'), ['csv_file' => $file])
             ->assertRedirect(route('products.import.create'))
-            ->assertSessionHas('import_progress', 100);
+            ->assertSessionHas('import_progress', 100)
+            ->assertSessionHas('import_details');
 
         $this->assertDatabaseHas('products', [
             'id' => $product->id,

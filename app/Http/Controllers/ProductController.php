@@ -413,9 +413,17 @@ class ProductController extends Controller
             ],
         );
 
+        $importDetails = [
+            "{$created} nouveau(x) produit(s) ajoute(s) au catalogue.",
+            "{$updated} produit(s) deja existant(s) mis a jour: designation, categorie, marque, references, prix, stock, seuil, type de stock et statut ont ete repris depuis le CSV.",
+            "{$clientReferencesUpdated} reference(s) client/mine enregistree(s) ou mise(s) a jour avec leur appellation et prix client.",
+            "{$skipped} ligne(s) ignoree(s). Les raisons sont affichees ci-dessous quand il y en a.",
+        ];
+
         return redirect()
             ->route('products.import.create')
-            ->with('success', "Import termine: {$created} produit(s) cree(s), {$updated} produit(s) modifie(s), {$clientReferencesUpdated} reference(s) client/mine, {$skipped} ligne(s) ignoree(s).")
+            ->with('success', "Import termine avec succes: {$created} cree(s), {$updated} mis a jour, {$clientReferencesUpdated} reference(s) client/mine traitee(s), {$skipped} ignoree(s).")
+            ->with('import_details', $importDetails)
             ->with('import_progress', 100)
             ->with('import_errors', $errors);
     }
