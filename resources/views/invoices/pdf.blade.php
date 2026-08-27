@@ -6,7 +6,7 @@
     @php
         $currency = $invoice->currency ?: ($company['sales.currency'] ?? 'FCFA');
         $money = fn ($value) => number_format((float) $value, 0, ',', ' ').' '.$currency;
-        $qty = fn ($value) => number_format((float) $value, (float) $value == floor((float) $value) ? 0 : 3, ',', ' ');
+        $qty = fn ($value) => number_format((float) $value, (float) $value == floor((float) $value) ? 0 : 2, ',', ' ');
     @endphp
     @include('pdf._document_styles')
 </head>

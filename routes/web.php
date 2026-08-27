@@ -395,6 +395,10 @@ Route::middleware(['auth'])->group(function (): void {
         ->except(['destroy'])
         ->middleware('permission:invoices.view|invoices.create|invoices.update');
 
+    Route::post('/invoices/{invoice}/sync-from-proforma', [InvoiceController::class, 'syncFromProforma'])
+        ->name('invoices.sync-from-proforma')
+        ->middleware('permission:invoices.update');
+
     Route::patch('/invoices/{invoice}/status', [CommercialDocumentStatusController::class, 'updateInvoice'])
         ->name('invoices.status.update')
         ->middleware('permission:sensitive.update_validated_document');

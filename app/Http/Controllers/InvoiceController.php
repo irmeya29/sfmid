@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Documents\ConvertDeliveryNoteToInvoiceAction;
 use App\Actions\Documents\CreateInvoiceFromCommercialSourceAction;
 use App\Actions\Documents\SaveDirectInvoiceAction;
+use App\Actions\Documents\SyncInvoiceFromProformaAction;
 use App\Enums\InvoiceStatus;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
@@ -200,6 +201,21 @@ class InvoiceController extends Controller
         return redirect()
             ->route('invoices.show', $invoice)
             ->with('success', 'Facture modifiée avec succès.');
+    }
+
+    public function syncFromProforma(Invoice $invoice, Request $request, SyncInvoiceFromProformaAction $action): RedirectResponse
+    {
+        Gate::authorize('syncFromProforma', $invoice);
+
+        try {
+            $invoice = $action->execute($invoice, $request->user());
+        } catch (RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('invoices.show', $invoice)
+            ->with('success', 'Facture synchronisée depuis la proforma.');
     }
 
     public function pdf(Invoice $invoice): Response

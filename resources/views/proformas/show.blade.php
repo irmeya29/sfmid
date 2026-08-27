@@ -166,7 +166,7 @@
                                 <p class="font-semibold text-slate-950">{{ $item->product_name }}</p>
                                 <p class="text-xs text-slate-500">{{ $item->unit }}</p>
                             </td>
-                            <td class="px-5 py-4 text-right font-semibold">{{ \App\Support\NumberFormatter::quantity($item->quantity) }}</td>
+                            <td class="px-5 py-4 text-right font-semibold">{{ \App\Support\NumberFormatter::quantity($item->quantity, 2) }}</td>
                             <td class="px-5 py-4 text-right">{{ $money($item->unit_price) }}</td>
                             <td class="px-5 py-4 text-right">
                                 {{ number_format((float) $item->discount_rate, 2, ',', ' ') }} %

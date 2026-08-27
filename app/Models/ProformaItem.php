@@ -34,7 +34,7 @@ class ProformaItem extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'decimal:3',
+            'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'line_subtotal' => 'decimal:2',
             'discount_rate' => 'decimal:2',

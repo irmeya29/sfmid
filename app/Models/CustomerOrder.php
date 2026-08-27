@@ -60,7 +60,7 @@ class CustomerOrder extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(CustomerOrderItem::class);
+        return $this->hasMany(CustomerOrderItem::class)->orderBy('id');
     }
 
     public function deliveryNotes(): HasMany

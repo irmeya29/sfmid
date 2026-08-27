@@ -41,6 +41,21 @@ class InvoicePolicy
             );
     }
 
+    public function syncFromProforma(User $user, Invoice $invoice): bool
+    {
+        return $user->hasPermission('invoices.update')
+            && $invoice->proforma_id !== null
+            && $invoice->delivery_note_id === null
+            && $invoice->customer_order_id === null
+            && in_array($invoice->status, [
+                InvoiceStatus::Draft,
+                InvoiceStatus::Rejected,
+                InvoiceStatus::Corrected,
+            ], true)
+            && (float) $invoice->paid_amount <= 0
+            && ! $invoice->payments()->exists();
+    }
+
     public function delete(User $user, Invoice $invoice): bool
     {
         return $user->hasPermission('invoices.delete_draft')

@@ -206,7 +206,7 @@ const applyTax = document.getElementById('apply-tax');
 const taxRateInput = document.getElementById('global-tax-rate');
 
 const money = value => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0) + ' ' + currency;
-const qty = value => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 3 }).format(value || 0);
+const qty = value => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(value || 0);
 const decimal = value => Number(String(value || 0).replace(/\s/g, '').replace(',', '.')) || 0;
 const inputNumber = value => {
     const number = Number(value || 0);

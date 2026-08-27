@@ -14,6 +14,8 @@ use App\Models\PaymentMode;
 use App\Models\Permission;
 use App\Models\ProductStockSite;
 use App\Models\Product;
+use App\Models\Proforma;
+use App\Models\ProformaItem;
 use App\Models\Role;
 use App\Models\StockSite;
 use App\Models\StockSuspense;
@@ -256,6 +258,127 @@ class InvoicePaymentHttpTest extends TestCase
         $this->assertSame(8.0, (float) $product->refresh()->physical_stock);
         $this->assertNotNull($invoice->refresh()->stock_moved_at);
         $this->assertDatabaseCount('stock_movements', 1);
+    }
+
+    public function test_draft_invoice_can_be_synced_from_updated_proforma(): void
+    {
+        $user = $this->userWithPermissions(['invoices.view', 'invoices.update']);
+        $client = \App\Models\Client::factory()->create();
+        $firstProduct = Product::factory()->create(['sale_price' => 10000]);
+        $secondProduct = Product::factory()->create(['sale_price' => 20000]);
+
+        $proforma = Proforma::factory()->validated()->create([
+            'client_id' => $client->id,
+            'subject' => 'Proforma mise a jour',
+            'currency' => 'FCFA',
+            'payment_terms' => 'Paiement 30 jours',
+            'delivery_delay' => '7 jours',
+            'subtotal' => 50000,
+            'discount_total' => 5000,
+            'tax_total' => 8100,
+            'total' => 53100,
+            'notes' => 'Notes proforma',
+        ]);
+
+        ProformaItem::factory()->create([
+            'proforma_id' => $proforma->id,
+            'product_id' => $firstProduct->id,
+            'product_code' => $firstProduct->code,
+            'product_name' => 'Premiere ligne',
+            'unit' => $firstProduct->unit,
+            'quantity' => 2,
+            'unit_price' => 10000,
+            'line_subtotal' => 20000,
+            'discount_amount' => 0,
+            'tax_rate' => 18,
+            'tax_amount' => 3600,
+            'line_total_ht' => 20000,
+            'line_total_ttc' => 23600,
+            'line_total' => 23600,
+        ]);
+        ProformaItem::factory()->create([
+            'proforma_id' => $proforma->id,
+            'product_id' => $secondProduct->id,
+            'product_code' => $secondProduct->code,
+            'product_name' => 'Deuxieme ligne',
+            'unit' => $secondProduct->unit,
+            'quantity' => 1.5,
+            'unit_price' => 20000,
+            'line_subtotal' => 30000,
+            'discount_amount' => 5000,
+            'tax_rate' => 18,
+            'tax_amount' => 4500,
+            'line_total_ht' => 25000,
+            'line_total_ttc' => 29500,
+            'line_total' => 29500,
+        ]);
+
+        $invoice = Invoice::factory()->create([
+            'proforma_id' => $proforma->id,
+            'client_id' => $client->id,
+            'status' => InvoiceStatus::Draft,
+            'subject' => 'Ancienne facture',
+            'subtotal' => 10000,
+            'discount_total' => 0,
+            'tax_total' => 0,
+            'total' => 10000,
+            'paid_amount' => 0,
+            'balance_due' => 10000,
+        ]);
+        \App\Models\InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'product_name' => 'Ancienne ligne',
+            'line_total' => 10000,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('invoices.sync-from-proforma', $invoice))
+            ->assertRedirect(route('invoices.show', $invoice));
+
+        $invoice->refresh()->load('items');
+
+        $this->assertSame('Proforma mise a jour', $invoice->subject);
+        $this->assertSame(53100.0, (float) $invoice->total);
+        $this->assertSame(53100.0, (float) $invoice->balance_due);
+        $this->assertSame(['Premiere ligne', 'Deuxieme ligne'], $invoice->items->pluck('product_name')->all());
+        $this->assertDatabaseHas('activity_logs', [
+            'subject_type' => Invoice::class,
+            'subject_id' => $invoice->id,
+            'action' => 'synced_from_proforma',
+        ]);
+    }
+
+    public function test_invoice_sync_from_proforma_is_forbidden_after_validation_or_payment(): void
+    {
+        $user = $this->userWithPermissions(['invoices.update']);
+        $proforma = Proforma::factory()->validated()->create(['total' => 20000]);
+
+        $validatedInvoice = Invoice::factory()->create([
+            'proforma_id' => $proforma->id,
+            'client_id' => $proforma->client_id,
+            'status' => InvoiceStatus::Validated,
+            'total' => 10000,
+            'paid_amount' => 0,
+            'balance_due' => 10000,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('invoices.sync-from-proforma', $validatedInvoice))
+            ->assertForbidden();
+
+        $draftInvoiceWithPayment = Invoice::factory()->create([
+            'proforma_id' => $proforma->id,
+            'client_id' => $proforma->client_id,
+            'status' => InvoiceStatus::Draft,
+            'total' => 10000,
+            'paid_amount' => 5000,
+            'balance_due' => 5000,
+        ]);
+        Payment::factory()->create(['invoice_id' => $draftInvoiceWithPayment->id]);
+
+        $this->actingAs($user)
+            ->post(route('invoices.sync-from-proforma', $draftInvoiceWithPayment))
+            ->assertForbidden();
     }
 
     public function test_payment_partial_total_validation_receipt_and_cash_journal(): void

@@ -16,6 +16,7 @@
         </div>
         <div class="flex flex-wrap gap-3">
             @can('exportPdf', $invoice)<x-button :href="route('invoices.pdf', $invoice)" target="_blank" tone="secondary" icon="printer">PDF / Imprimer</x-button>@endcan
+            @can('syncFromProforma', $invoice)<form method="POST" action="{{ route('invoices.sync-from-proforma', $invoice) }}" onsubmit="return confirm('Synchroniser cette facture depuis la proforma source ? Les lignes actuelles de la facture seront remplacées.');">@csrf<x-button type="submit" tone="secondary" icon="refresh-cw">Synchroniser proforma</x-button></form>@endcan
             @can('update', $invoice)<x-button :href="route('invoices.edit', $invoice)" icon="pencil">Modifier</x-button>@endcan
             @can('submit', $invoice)<form method="POST" action="{{ route('invoices.submit', $invoice) }}">@csrf<x-button type="submit" tone="secondary" icon="send">Soumettre</x-button></form>@endcan
             @can('validate', $invoice)<form method="POST" action="{{ route('invoices.validate', $invoice) }}">@csrf<x-button type="submit" tone="success" icon="check">Valider</x-button></form>@endcan
@@ -82,7 +83,7 @@
             <thead class="bg-slate-50"><tr><th class="px-5 py-4 text-left">Produit</th><th class="px-5 py-4 text-right">Qté</th><th class="px-5 py-4 text-right">Prix</th><th class="px-5 py-4 text-right">Remise</th><th class="px-5 py-4 text-right">Total</th></tr></thead>
             <tbody class="divide-y divide-slate-100">
                 @foreach($invoice->items as $item)
-                    <tr><td class="px-5 py-4"><p class="font-semibold">{{ $item->product_name }}</p><p class="text-xs text-slate-500">{{ $item->product_code }} · {{ $item->unit }}</p></td><td class="px-5 py-4 text-right">{{ \App\Support\NumberFormatter::quantity($item->quantity) }}</td><td class="px-5 py-4 text-right">{{ number_format((float) $item->unit_price, 0, ',', ' ') }}</td><td class="px-5 py-4 text-right">{{ number_format((float) $item->discount_amount, 0, ',', ' ') }}</td><td class="px-5 py-4 text-right font-bold">{{ number_format((float) $item->line_total, 0, ',', ' ') }} FCFA</td></tr>
+                    <tr><td class="px-5 py-4"><p class="font-semibold">{{ $item->product_name }}</p><p class="text-xs text-slate-500">{{ $item->product_code }} · {{ $item->unit }}</p></td><td class="px-5 py-4 text-right">{{ \App\Support\NumberFormatter::quantity($item->quantity, 2) }}</td><td class="px-5 py-4 text-right">{{ number_format((float) $item->unit_price, 0, ',', ' ') }}</td><td class="px-5 py-4 text-right">{{ number_format((float) $item->discount_amount, 0, ',', ' ') }}</td><td class="px-5 py-4 text-right font-bold">{{ number_format((float) $item->line_total, 0, ',', ' ') }} FCFA</td></tr>
                 @endforeach
             </tbody>
         </table>

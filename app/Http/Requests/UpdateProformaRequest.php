@@ -48,7 +48,7 @@ class UpdateProformaRequest extends FormRequest
             'items.*.product_id' => ['required_if:items.*.item_type,product', 'nullable', 'integer', 'exists:products,id'],
             'items.*.product_name' => ['required_if:items.*.item_type,service', 'nullable', 'string', 'max:255'],
             'items.*.unit' => ['required_if:items.*.item_type,service', 'nullable', 'string', 'max:50'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.01', 'regex:/^\d+(\.\d{1,2})?$/'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];

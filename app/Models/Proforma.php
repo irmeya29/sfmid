@@ -77,7 +77,7 @@ class Proforma extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(ProformaItem::class);
+        return $this->hasMany(ProformaItem::class)->orderBy('id');
     }
 
     public function deliveryNote(): HasOne

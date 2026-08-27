@@ -290,7 +290,7 @@
                 return;
             }
 
-            stockDisplay.textContent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 3 }).format(stock);
+            stockDisplay.textContent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(stock);
 
             if (qty > stock) {
                 warning.textContent = 'Stock insuffisant';
