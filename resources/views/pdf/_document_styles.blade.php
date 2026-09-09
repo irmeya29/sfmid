@@ -130,4 +130,9 @@
     .invoice-summary .value { color: #10203f; font-size: 12px; font-weight: 600; margin-top: 2px; }
     .items-table td.description { color: #10203f; }
     .amount-words { clear: both; color: #10203f; font-style: italic; margin-top: 18px; }
+    .erp-client-card { font-size: 9px; line-height: 1.2; min-height: 0; padding: 5px 7px; overflow-wrap: break-word; word-wrap: break-word; }
+    .erp-client-card .erp-card-title { font-size: 9px; margin-bottom: 3px; padding-bottom: 0; }
+    .erp-client-card .erp-card-name { font-size: 10px; line-height: 1.2; margin-bottom: 2px; }
+    .erp-client-detail { display: inline; margin-right: 7px; }
+    .erp-client-card .erp-label, .erp-client-card .erp-value { line-height: 1.2; }
 </style>

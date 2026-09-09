@@ -37,15 +37,7 @@
         <table class="erp-info">
             <tr>
                 <td style="width: 58%;">
-                    <div class="erp-card">
-                        <div class="erp-card-title">Client</div>
-                        <div class="erp-card-name">{{ $proforma->client?->name ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Code client</span><span class="erp-value">{{ $proforma->client?->code ?: '-' }}</span></div>
-                        @if($proforma->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $proforma->client->phone }}</span></div>@endif
-                        @if($proforma->client?->email)<div class="erp-row"><span class="erp-label">Email</span><span class="erp-value">{{ $proforma->client->email }}</span></div>@endif
-                        @if($proforma->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span><span class="erp-value">{{ $proforma->client->ifu }}</span></div>@endif
-                        @if($proforma->client?->rccm)<div class="erp-row"><span class="erp-label">RCCM</span><span class="erp-value">{{ $proforma->client->rccm }}</span></div>@endif
-                    </div>
+                    @include('pdf._client_identity', ['client' => $proforma->client, 'clientTitle' => 'Client'])
                 </td>
                 <td class="erp-info-gap"></td>
                 <td style="width: 42%;">

@@ -38,14 +38,7 @@
         <table class="erp-info">
             <tr>
                 <td style="width: 58%;">
-                    <div class="erp-card">
-                        <div class="erp-card-title">Client facture</div>
-                        <div class="erp-card-name">{{ $invoice->client?->name ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Code client</span><span class="erp-value">{{ $invoice->client?->code ?: '-' }}</span></div>
-                        @if($invoice->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $invoice->client->phone }}</span></div>@endif
-                        @if($invoice->client?->email)<div class="erp-row"><span class="erp-label">Email</span><span class="erp-value">{{ $invoice->client->email }}</span></div>@endif
-                        @if($invoice->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span><span class="erp-value">{{ $invoice->client->ifu }}</span></div>@endif
-                    </div>
+                    @include('pdf._client_identity', ['client' => $invoice->client, 'clientTitle' => 'Client facturé'])
                 </td>
                 <td class="erp-info-gap"></td>
                 <td style="width: 42%;">

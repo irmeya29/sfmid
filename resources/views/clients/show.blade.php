@@ -63,6 +63,15 @@
                     <p class="mt-1 font-semibold text-slate-950">{{ $client->rccm ?: 'Non renseigné' }}</p>
                 </div>
 
+                @foreach(['tax_regime' => 'Régime fiscal', 'legal_form' => 'Forme juridique', 'cnss' => 'N° CNSS', 'share_capital' => 'Capital social', 'postal_address' => 'Boîte postale'] as $field => $label)
+                    @if(filled($client->{$field}))
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $label }}</p>
+                            <p class="mt-1 font-semibold text-slate-950">{{ $client->{$field} }}</p>
+                        </div>
+                    @endif
+                @endforeach
+
                 <div class="sm:col-span-2">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Adresse</p>
                     <p class="mt-1 font-semibold text-slate-950">{{ $client->address ?: 'Non renseignée' }}</p>

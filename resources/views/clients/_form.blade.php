@@ -142,6 +142,18 @@
             @enderror
         </div>
 
+        @foreach(['tax_regime' => 'Régime fiscal', 'legal_form' => 'Forme juridique', 'cnss' => 'N° CNSS', 'share_capital' => 'Capital social (montant et devise)', 'postal_address' => 'Boîte postale'] as $field => $label)
+            <div>
+                <label for="{{ $field }}" class="mb-2 block text-sm font-semibold text-slate-700">{{ $label }}</label>
+                <input type="text" id="{{ $field }}" name="{{ $field }}" value="{{ old($field, $client->{$field}) }}"
+                    maxlength="{{ in_array($field, ['cnss', 'share_capital']) ? 100 : 255 }}"
+                    class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                @error($field)
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+        @endforeach
+
         <div class="lg:col-span-2">
             <label class="mb-2 block text-sm font-semibold text-slate-700">Conditions commerciales</label>
             <textarea

@@ -36,14 +36,7 @@
         <table class="erp-info">
             <tr>
                 <td style="width: 58%;">
-                    <div class="erp-card">
-                        <div class="erp-card-title">Client livre</div>
-                        <div class="erp-card-name">{{ $deliveryNote->client?->name ?: '-' }}</div>
-                        <div class="erp-row"><span class="erp-label">Code client</span><span class="erp-value">{{ $deliveryNote->client?->code ?: '-' }}</span></div>
-                        @if($deliveryNote->client?->phone)<div class="erp-row"><span class="erp-label">Telephone</span><span class="erp-value">{{ $deliveryNote->client->phone }}</span></div>@endif
-                        @if($deliveryNote->client?->email)<div class="erp-row"><span class="erp-label">Email</span><span class="erp-value">{{ $deliveryNote->client->email }}</span></div>@endif
-                        @if($deliveryNote->client?->ifu)<div class="erp-row"><span class="erp-label">IFU</span><span class="erp-value">{{ $deliveryNote->client->ifu }}</span></div>@endif
-                    </div>
+                    @include('pdf._client_identity', ['client' => $deliveryNote->client, 'clientTitle' => 'Client livré'])
                 </td>
                 <td class="erp-info-gap"></td>
                 <td style="width: 42%;">
